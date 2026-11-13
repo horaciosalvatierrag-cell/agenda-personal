@@ -133,10 +133,8 @@ button { color: inherit; }
 .icon-btn, .avatar, .arrow, .close-btn { display: grid; place-items: center; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
 .icon-btn { position: relative; width: 39px; height: 39px; border-radius: 50%; color: #43525e; font-size: 18px; transition: background .15s, border-color .15s; }
 .icon-btn:hover, .arrow:hover { border-color: #b9d9f1; background: #f5faff; }
-.google-connect-btn { display: inline-flex; min-height: 36px; align-items: center; gap: 8px; padding: 0 11px; border: 1px solid #d5dce2; border-radius: 7px; color: #3d4b55; background: white; font-size: 10px; font-weight: 600; cursor: pointer; }
-.google-connect-btn:hover, .google-signin-btn:hover { border-color: #9ccbed; background: #f6fbff; }
-.google-g { display: inline-grid; width: 19px; height: 19px; place-items: center; border-radius: 50%; color: #4285f4; background: white; font: 700 14px Arial,sans-serif; }
 .notify-dot { position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border: 1px solid white; border-radius: 50%; background: #e3a008; }
+.notify-dot.granted { background: #107c10; }
 .avatar { width: 37px; height: 37px; border: 0; border-radius: 50%; color: #005a9e; background: #dceefb; font-weight: 650; }
 .panel { overflow: hidden; border: 1px solid #e6e9ec; border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
 
@@ -251,6 +249,7 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .diary-text::placeholder { color: #9aa5ad; }
 .diary-text:focus { border-color: var(--blue); box-shadow: 0 0 0 2px #0078d422; background: white; }
 .diary-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 13px; }
+.diary-save-group { display: flex; align-items: center; gap: 12px; }
 .important-toggle { display: inline-flex; align-items: center; gap: 7px; margin: 0; color: #596772; font-size: 10px; font-weight: 500; cursor: pointer; }
 .important-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .important-toggle span { color: #89949b; font-size: 17px; }
@@ -282,23 +281,8 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .media-card figcaption span, .media-card figcaption small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .media-card figcaption span { color: #3e4c56; font-size: 10px; font-weight: 600; }
 .media-card figcaption small { margin-top: 3px; color: #7b8790; font-size: 9px; }
-.account-modal { padding: 24px; }
-.account-intro { margin: 0 0 15px; color: #596772; font-size: 12px; line-height: 1.6; }
-.account-identity { display: flex; align-items: center; gap: 11px; margin: 13px 0; padding: 11px; border: 1px solid #e7edf1; border-radius: 8px; background: #f8fafc; }
-.account-avatar { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 50%; color: #005a9e; background: #dceefb; font-weight: 700; }
-.account-identity strong, .account-identity small { display: block; }
-.account-identity strong { font-size: 11px; }
-.account-identity small { margin-top: 3px; color: #64717b; font-size: 10px; }
-.account-status { margin: 13px 0; padding: 10px 11px; border-radius: 7px; color: #576771; background: #f3f6f8; font-size: 10px; line-height: 1.55; }
-.google-signin-btn, .sync-now-btn, .signout-btn, .conflict-cloud-btn, .conflict-local-btn { display: flex; width: 100%; min-height: 40px; align-items: center; justify-content: center; gap: 9px; margin-top: 9px; padding: 9px 12px; border: 1px solid #d5dce2; border-radius: 7px; color: #33414b; background: white; font-size: 11px; font-weight: 600; cursor: pointer; }
-.sync-now-btn { border-color: #b6d9f2; color: #005a9e; background: #f2f9fe; }
-.sync-now-btn:hover { background: #e5f3fd; }
-.signout-btn { border-color: transparent; color: #65717a; }
-.signout-btn:hover { background: #f4f6f7; }
-.account-footnote { margin: 15px 0 0; color: #78848c; font-size: 9px; line-height: 1.55; }
-.conflict-actions { display: grid; gap: 7px; }
-.conflict-cloud-btn { border-color: #b6d9f2; color: #005a9e; background: #f2f9fe; }
-.conflict-local-btn { color: #46545e; background: #f6f7f8; }
+.install-modal { padding: 24px; }
+.install-instructions { margin: 0; color: #596772; font-size: 12px; line-height: 1.6; }
 
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
@@ -332,8 +316,6 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .top-actions { gap: 9px; }
   .icon-btn { width: 36px; height: 36px; }
   .install-btn { min-height: 34px; gap: 4px; padding: 0 6px; font-size: 8px; }
-  .google-connect-btn { min-height: 34px; gap: 5px; padding: 0 7px; font-size: 9px; }
-  .google-g { width: 17px; height: 17px; }
   .avatar { width: 34px; height: 34px; }
   .panel { border-radius: 10px; }
   .calendar-toolbar { height: 56px; padding: 0 9px; }
@@ -361,7 +343,7 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .activity-list { padding: 0 14px; }
   .list-row { grid-template-columns: 72px 1fr 26px; gap: 7px; }
   .category-tag { display: none; }
-  .account-modal { padding: 20px 16px; }
+  .install-modal { padding: 20px 16px; }
   .media-view { padding: 15px 12px; }
   .media-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .media-card figcaption { padding: 7px; }
@@ -371,6 +353,7 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .diary-date-tools input { min-width: 0; flex: 1; }
   .diary-text { min-height: 270px; margin-top: 14px; padding: 13px; font-size: 13px; }
   .diary-bottom { align-items: flex-start; flex-direction: column; }
+  .diary-save-group { width: 100%; justify-content: space-between; gap: 8px; }
   .diary-save-status { text-align: left; }
 }
 @media (max-width: 370px) {
@@ -384,6 +367,4 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .top-actions { gap: 5px; }
   .install-btn { width: 33px; justify-content: center; padding: 0; }
   .install-btn span:last-child { display: none; }
-  .google-connect-btn { width: 33px; justify-content: center; padding: 0; }
-  #accountBtnLabel { display: none; }
 }
