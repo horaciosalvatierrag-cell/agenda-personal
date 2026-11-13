@@ -3,7 +3,7 @@
   const $ = (s) => document.querySelector(s);
   const DB_KEY = 'agenda-sqlite-v1';
   const STORAGE = 'AgendaPersonalSQLite';
-  let db, current = new Date(), selected = iso(new Date()), view = 'month', saveTimer;
+  let db, SQL, current = new Date(), selected = iso(new Date()), view = 'month', saveTimer;
   const fmt = new Intl.DateTimeFormat('es-MX', { day:'numeric', month:'long', year:'numeric' });
   const monthFmt = new Intl.DateTimeFormat('es-MX', { month:'long', year:'numeric' });
   const longDay = new Intl.DateTimeFormat('es-MX', { weekday:'long', day:'numeric', month:'long' });
@@ -16,6 +16,7 @@
   function idb(mode) { return new Promise((resolve,reject)=>{const req=indexedDB.open(STORAGE,1);req.onupgradeneeded=()=>req.result.createObjectStore('files');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const dbi=req.result;const tx=dbi.transaction('files',mode);tx.onerror=()=>reject(tx.error);resolve(tx);};}); }
   async function loadDb() { const tx=await idb('readonly');const req=tx.objectStore('files').get(DB_KEY);return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);}); }
   async function init() {
+    SQL=await initSqlJs({locateFile:file=>`./vendor/${file}`});
     const saved=await loadDb();
     db=saved?new SQL.Database(new Uint8Array(saved)):new SQL.Database();
     db.run(`PRAGMA foreign_keys=ON;
