@@ -1,12 +1,12 @@
 {
   "name": "Agenda personal",
   "short_name": "Agenda",
-  "description": "Agenda personal privada con calendario perpetuo y modo sin conexión.",
+  "description": "Agenda personal privada con diario, calendario perpetuo y modo sin conexión.",
   "lang": "es-MX",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f7f9f7",
-  "theme_color": "#102c29",
+  "theme_color": "#0078d4",
   "icons": [{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
 }

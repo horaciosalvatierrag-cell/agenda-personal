@@ -7,6 +7,7 @@ Agenda instalable, en español, con calendario perpetuo y almacenamiento privado
 - Calendario mensual navegable sin límite de año, con actividades y selección de día.
 - Alta, edición, búsqueda, categoría y eliminación de actividades; repetición diaria, semanal, mensual o anual.
 - Marcas de completado por cada fecha, incluyendo cada repetición.
+- Diario con notas por día, marca de fecha importante y consulta de las 12 notas recientes.
 - Notificaciones del navegador para actividades con hora. Se revisan mientras la aplicación está abierta.
 - Base de datos SQLite con las tablas `activities` y `completions`.
 - Guardado local persistente en el navegador, exportación e importación de respaldo `.sqlite`.

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#102c29"><meta name="description" content="Agenda personal privada, con calendario perpetuo y funcionamiento sin conexión.">
+  <meta name="theme-color" content="#0078d4"><meta name="description" content="Agenda personal privada, diario, calendario perpetuo y funcionamiento sin conexión.">
   <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg"><link rel="stylesheet" href="./styles.css">
   <title>Agenda · Personal</title>
 </head>
@@ -15,6 +15,7 @@
       <button class="nav-item active" data-view="month"><span>▦</span> Calendario</button>
       <button class="nav-item" data-view="list"><span>☷</span> Actividades</button>
       <button class="nav-item" data-view="upcoming"><span>◷</span> Próximas <b id="upcomingCount" class="count"></b></button>
+      <button class="nav-item" data-view="diary"><span>✎</span> Diario</button>
       <div class="side-foot"><div class="privacy-icon">◈</div><strong>Tus datos son tuyos</strong><p>La agenda se guarda en este dispositivo. No se envía a servidores.</p><div class="offline"><i></i><span id="connectionLabel">Conectado</span></div></div>
     </aside>
     <main class="main">
@@ -25,7 +26,8 @@
         <div id="calendarGrid" class="calendar-grid"></div>
       </section>
       <section id="listView" class="panel hidden"><div class="list-heading"><div><div class="eyebrow">TU PLAN</div><h2 id="listHeading">Todas las actividades</h2></div><div class="filters"><input id="searchInput" type="search" placeholder="Buscar actividad…"><select id="categoryFilter"><option value="">Todas</option><option>Personal</option><option>Trabajo</option><option>Salud</option><option>Hogar</option><option>Otro</option></select></div></div><div id="activityList" class="activity-list"></div></section>
-      <section class="below-grid"><div class="panel day-panel"><div class="section-head"><div><div class="eyebrow">AGENDA DEL DÍA</div><h2 id="selectedDayTitle"></h2></div><button id="addDayBtn" class="small-add">＋ Añadir</button></div><div id="dayList" class="day-list"></div></div><div class="panel insight-panel"><div class="eyebrow">A TU RITMO</div><h2>Un paso a la vez.</h2><p>Organiza tus pendientes y deja espacio para lo que importa.</p><div class="week-summary"><span>Esta semana</span><b id="weekSummary">0 actividades</b></div><div id="weekDots" class="week-dots"></div></div></section>
+      <section id="diaryView" class="diary-layout hidden"><article class="panel diary-editor"><div class="diary-top"><div><div class="eyebrow">UN ESPACIO PARA TI</div><h2 id="diaryDateLabel"></h2></div><div class="diary-date-tools"><button id="prevDiaryDay" class="arrow" aria-label="Día anterior">‹</button><input id="diaryDate" type="date" aria-label="Fecha del diario"><button id="nextDiaryDay" class="arrow" aria-label="Día siguiente">›</button><button id="todayDiaryBtn" class="today-btn">Hoy</button></div></div><textarea id="diaryContent" class="diary-text" maxlength="10000" placeholder="¿Qué quieres recordar de este día? Una idea, algo que pasó, o algo importante para ti…"></textarea><div class="diary-bottom"><label class="important-toggle"><input id="diaryImportant" type="checkbox"><span>☆</span> Marcar este día como importante</label><span id="diarySaveStatus" class="diary-save-status">Tus anotaciones se guardan en este dispositivo</span></div></article><aside class="panel diary-recent"><div class="eyebrow">TUS DÍAS</div><h2>Notas recientes</h2><div id="diaryRecentList" class="diary-recent-list"></div></aside></section>
+      <section id="dashboardExtras" class="below-grid"><div class="panel day-panel"><div class="section-head"><div><div class="eyebrow">AGENDA DEL DÍA</div><h2 id="selectedDayTitle"></h2></div><button id="addDayBtn" class="small-add">＋ Añadir</button></div><div id="dayList" class="day-list"></div></div><div class="panel insight-panel"><div class="eyebrow">A TU RITMO</div><h2>Un paso a la vez.</h2><p>Organiza tus pendientes y deja espacio para lo que importa.</p><div class="week-summary"><span>Esta semana</span><b id="weekSummary">0 actividades</b></div><div id="weekDots" class="week-dots"></div></div></section>
       <footer class="footer"><span id="dbStatus">Base de datos local SQLite</span><div><button id="exportBtn" class="text-btn">Exportar respaldo</button><button id="importBtn" class="text-btn">Importar respaldo</button><input type="file" id="importFile" accept=".sqlite,.db,application/octet-stream" hidden></div></footer>
     </main>
   </div>

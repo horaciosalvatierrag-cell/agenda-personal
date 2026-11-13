@@ -15,4 +15,10 @@ CREATE TABLE IF NOT EXISTS completions (
   completed INTEGER NOT NULL DEFAULT 1,
   PRIMARY KEY(activity_id, occurrence_date)
 );
+CREATE TABLE IF NOT EXISTS daily_notes (
+  date TEXT PRIMARY KEY,
+  content TEXT NOT NULL DEFAULT '',
+  important INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(date);

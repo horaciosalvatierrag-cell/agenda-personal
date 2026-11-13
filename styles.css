@@ -233,6 +233,34 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .delete-btn { color: #a4262c; background: #fdebec; }
 .hidden { display: none !important; }
 
+/* Diario personal */
+.diary-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(230px, .8fr); align-items: start; gap: 16px; }
+.diary-editor, .diary-recent { padding: 22px; }
+.diary-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.diary-top h2, .diary-recent h2 { margin: 6px 0 0; font-size: 17px; font-weight: 650; text-transform: capitalize; }
+.diary-date-tools { display: flex; align-items: center; gap: 7px; }
+.diary-date-tools input { width: 142px; min-height: 32px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; color: #45535e; background: white; font-size: 10px; }
+.diary-text { display: block; width: 100%; min-height: 360px; margin-top: 20px; padding: 17px; resize: vertical; border: 1px solid #e3e8ec; border-radius: 8px; outline: none; color: #27343d; background: #fcfdfe; font: 14px/1.8 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+.diary-text::placeholder { color: #9aa5ad; }
+.diary-text:focus { border-color: var(--blue); box-shadow: 0 0 0 2px #0078d422; background: white; }
+.diary-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 13px; }
+.important-toggle { display: inline-flex; align-items: center; gap: 7px; margin: 0; color: #596772; font-size: 10px; font-weight: 500; cursor: pointer; }
+.important-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.important-toggle span { color: #89949b; font-size: 17px; }
+.important-toggle:has(input:checked) { color: #815e00; }
+.important-toggle:has(input:checked) span { color: #c39200; }
+.important-toggle:focus-within span { outline: 2px solid var(--blue); outline-offset: 2px; }
+.diary-save-status { color: #79858d; font-size: 9px; text-align: right; }
+.diary-recent { position: sticky; top: 18px; }
+.diary-recent h2 { margin-bottom: 14px; }
+.diary-recent-list { display: grid; gap: 7px; }
+.diary-recent-item { display: grid; gap: 5px; width: 100%; padding: 11px; border: 1px solid #edf0f2; border-radius: 7px; color: #35434d; background: #fff; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.diary-recent-item:hover { border-color: #acd3ef; background: #f7fbfe; }
+.diary-recent-item.current { border-color: #9ecbed; background: #f0f8fe; }
+.diary-recent-date { color: #53616b; font-size: 10px; font-weight: 650; }
+.diary-recent-text { display: -webkit-box; overflow: hidden; color: #77838b; font-size: 10px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.diary-empty { padding: 17px 6px; color: #86919a; text-align: center; font-size: 10px; line-height: 1.6; }
+
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
 @media (min-width: 1300px) {
@@ -246,6 +274,8 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .event-pill { font-size: 8px; }
   .below-grid { grid-template-columns: 1fr; }
   .insight-panel { min-height: 145px; }
+  .diary-layout { grid-template-columns: 1fr; }
+  .diary-recent { position: static; }
 }
 @media (max-width: 680px) {
   body { background: var(--canvas); }
@@ -287,6 +317,13 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .activity-list { padding: 0 14px; }
   .list-row { grid-template-columns: 72px 1fr 26px; gap: 7px; }
   .category-tag { display: none; }
+  .diary-editor, .diary-recent { padding: 15px 13px; }
+  .diary-top { align-items: flex-start; flex-direction: column; gap: 13px; }
+  .diary-date-tools { width: 100%; gap: 5px; }
+  .diary-date-tools input { min-width: 0; flex: 1; }
+  .diary-text { min-height: 270px; margin-top: 14px; padding: 13px; font-size: 13px; }
+  .diary-bottom { align-items: flex-start; flex-direction: column; }
+  .diary-save-status { text-align: left; }
 }
 @media (max-width: 370px) {
   .main { padding-right: 8px; padding-left: 8px; }
