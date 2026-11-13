@@ -52,9 +52,12 @@ const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const randomToken = () => crypto.randomBytes(32).toString('base64url');
 const cookieOptions = (maxAge) => ({ httpOnly: true, secure: true, sameSite: 'strict', path: '/', maxAge });
 const rpID = () => appOrigin ? new URL(appOrigin).hostname : 'localhost';
-const originOK = (req) => !appOrigin || req.get('origin') === appOrigin;
 const requireSameOrigin = (req, res, next) => {
-  if (!originOK(req) || req.get('sec-fetch-site') === 'cross-site') return res.status(403).json({ error: 'Origen rechazado' });
+  const origin = req.get('origin');
+  const isRead = ['GET', 'HEAD', 'OPTIONS'].includes(req.method);
+  if ((origin && appOrigin && origin !== appOrigin) || (!origin && appOrigin && !isRead) || req.get('sec-fetch-site') === 'cross-site') {
+    return res.status(403).json({ error: 'Origen rechazado' });
+  }
   next();
 };
 const requireConfiguredOrigin = (req, res, next) => {
