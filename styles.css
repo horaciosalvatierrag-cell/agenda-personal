@@ -126,6 +126,10 @@ button { color: inherit; }
 .eyebrow { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 1.15px; }
 .topbar h1 { margin: 5px 0 0; font-size: 27px; font-weight: 650; letter-spacing: -.7px; }
 .top-actions { display: flex; align-items: center; gap: 13px; }
+.install-btn { display: inline-flex; min-height: 36px; align-items: center; gap: 7px; padding: 0 10px; border: 1px solid #b9d9f1; border-radius: 7px; color: #005a9e; background: #f2f9fe; font-size: 10px; font-weight: 650; cursor: pointer; }
+.install-btn:hover { border-color: #78b7e5; background: #e4f3fd; }
+.install-btn span:first-child { font-size: 15px; }
+.install-btn:disabled { cursor: default; opacity: .7; }
 .icon-btn, .avatar, .arrow, .close-btn { display: grid; place-items: center; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
 .icon-btn { position: relative; width: 39px; height: 39px; border-radius: 50%; color: #43525e; font-size: 18px; transition: background .15s, border-color .15s; }
 .icon-btn:hover, .arrow:hover { border-color: #b9d9f1; background: #f5faff; }
@@ -263,6 +267,21 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .diary-recent-date { color: #53616b; font-size: 10px; font-weight: 650; }
 .diary-recent-text { display: -webkit-box; overflow: hidden; color: #77838b; font-size: 10px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .diary-empty { padding: 17px 6px; color: #86919a; text-align: center; font-size: 10px; line-height: 1.6; }
+.media-view { padding: 22px; }
+.media-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-bottom: 17px; border-bottom: 1px solid var(--line); }
+.media-heading h2 { margin: 6px 0 0; font-size: 17px; font-weight: 650; }
+.media-heading p { max-width: 520px; margin: 6px 0 0; color: #65727b; font-size: 10px; line-height: 1.6; }
+.media-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+.media-folder-btn { min-height: 34px; padding: 7px 10px; border: 1px solid #d8dfe4; border-radius: 6px; color: #4e5c66; background: white; font-size: 10px; font-weight: 600; cursor: pointer; }
+.media-folder-btn:hover { border-color: #a8cfe9; background: #f6fbff; }
+.media-status { padding: 13px 1px; color: #72808a; font-size: 10px; }
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 12px; }
+.media-card { overflow: hidden; min-width: 0; margin: 0; border: 1px solid #e2e7eb; border-radius: 8px; background: #fff; }
+.media-card img, .media-card video { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; color: white; background: #17212a; }
+.media-card figcaption { overflow: hidden; padding: 8px 9px; }
+.media-card figcaption span, .media-card figcaption small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.media-card figcaption span { color: #3e4c56; font-size: 10px; font-weight: 600; }
+.media-card figcaption small { margin-top: 3px; color: #7b8790; font-size: 9px; }
 .account-modal { padding: 24px; }
 .account-intro { margin: 0 0 15px; color: #596772; font-size: 12px; line-height: 1.6; }
 .account-identity { display: flex; align-items: center; gap: 11px; margin: 13px 0; padding: 11px; border: 1px solid #e7edf1; border-radius: 8px; background: #f8fafc; }
@@ -296,6 +315,8 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .insight-panel { min-height: 145px; }
   .diary-layout { grid-template-columns: 1fr; }
   .diary-recent { position: static; }
+  .media-heading { align-items: flex-start; flex-direction: column; }
+  .media-actions { justify-content: flex-start; }
 }
 @media (max-width: 680px) {
   body { background: var(--canvas); }
@@ -310,6 +331,7 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .topbar h1 { font-size: 23px; }
   .top-actions { gap: 9px; }
   .icon-btn { width: 36px; height: 36px; }
+  .install-btn { min-height: 34px; gap: 4px; padding: 0 6px; font-size: 8px; }
   .google-connect-btn { min-height: 34px; gap: 5px; padding: 0 7px; font-size: 9px; }
   .google-g { width: 17px; height: 17px; }
   .avatar { width: 34px; height: 34px; }
@@ -340,6 +362,9 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .list-row { grid-template-columns: 72px 1fr 26px; gap: 7px; }
   .category-tag { display: none; }
   .account-modal { padding: 20px 16px; }
+  .media-view { padding: 15px 12px; }
+  .media-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .media-card figcaption { padding: 7px; }
   .diary-editor, .diary-recent { padding: 15px 13px; }
   .diary-top { align-items: flex-start; flex-direction: column; gap: 13px; }
   .diary-date-tools { width: 100%; gap: 5px; }
@@ -356,4 +381,9 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .view-chip { letter-spacing: .2px; }
   .calendar-grid { grid-auto-rows: minmax(59px, 1fr); }
   .event-pill { font-size: 6px; }
+  .top-actions { gap: 5px; }
+  .install-btn { width: 33px; justify-content: center; padding: 0; }
+  .install-btn span:last-child { display: none; }
+  .google-connect-btn { width: 33px; justify-content: center; padding: 0; }
+  #accountBtnLabel { display: none; }
 }

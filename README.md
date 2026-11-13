@@ -12,6 +12,8 @@ Agenda instalable, en español, con calendario perpetuo y almacenamiento privado
 - Base SQLite local con actividades, completados y notas de diario.
 - Guardado local persistente en el navegador, exportación e importación de respaldo `.sqlite`.
 - Aplicación web progresiva (PWA): al cargarla por primera vez con internet, guarda sus archivos para uso posterior sin conexión.
+- Botón de instalación para añadirla al inicio del celular; incluye iconos de 192 y 512 px y guía para iPhone.
+- Visor local para fotos y videos que el usuario elige desde el dispositivo o desde una carpeta seleccionada.
 - Inicio de sesión Google y copia SQLite en el espacio privado de datos de la aplicación en Drive; usa el alcance limitado `drive.appdata`.
 
 ## Privacidad y límites
@@ -29,6 +31,14 @@ El ID OAuth de cliente no es secreto y se incluye en el código del sitio. Nunca
 5. Usa **Nueva actividad** para comenzar. Permite notificaciones si deseas avisos mientras la agenda permanezca abierta.
 
 Un servidor local (`localhost`) permite que el navegador use el service worker y SQLite WebAssembly. Abrir `index.html` con doble clic no habilita bien esas funciones.
+
+## Instalar en el celular y ver medios locales
+
+1. Abre la URL de GitHub Pages en Chrome para Android o Safari para iPhone/iPad.
+2. Pulsa **Instalar app** y confirma. Si el navegador no muestra una instalación directa, sigue las instrucciones del botón; en iPhone se usa **Compartir → Añadir a pantalla de inicio**.
+3. Abre **Fotos y videos** y selecciona archivos o una carpeta del teléfono. Chrome/Android abrirá el selector del sistema; puedes elegir la tarjeta SD desde ese selector si está disponible.
+
+Por seguridad, una PWA no obtiene acceso general a toda la tarjeta SD. Solo puede leer los archivos o la carpeta que eliges explícitamente en el selector. Los medios seleccionados se leen localmente y no se copian a la base SQLite ni se suben a Drive. Para acceso nativo más amplio a bibliotecas multimedia se necesitaría una app Android separada con permisos del sistema.
 
 ## Publicar con GitHub Pages
 
