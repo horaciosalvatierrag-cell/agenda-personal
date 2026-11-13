@@ -9,13 +9,16 @@ Agenda instalable, en español, con calendario perpetuo y almacenamiento privado
 - Marcas de completado por cada fecha, incluyendo cada repetición.
 - Diario con notas por día, marca de fecha importante y consulta de las 12 notas recientes.
 - Notificaciones del navegador para actividades con hora. Se revisan mientras la aplicación está abierta.
-- Base de datos SQLite con las tablas `activities` y `completions`.
+- Base SQLite local con actividades, completados y notas de diario.
 - Guardado local persistente en el navegador, exportación e importación de respaldo `.sqlite`.
 - Aplicación web progresiva (PWA): al cargarla por primera vez con internet, guarda sus archivos para uso posterior sin conexión.
+- Inicio de sesión Google y copia SQLite en el espacio privado de datos de la aplicación en Drive; usa el alcance limitado `drive.appdata`.
 
 ## Privacidad y límites
 
-Las actividades permanecen en el almacenamiento del navegador que las creó. No se sincronizan automáticamente entre dispositivos y borrar los datos del navegador puede borrarlas; usa **Exportar respaldo** periódicamente. Publicar el código en GitHub no publica el archivo SQLite de tus actividades. Las notificaciones dependen del permiso del navegador y no se disparan si el navegador/sistema no mantiene activa la aplicación.
+La copia local permanece en el navegador. Al conectar Google, la app sincroniza la base SQLite como un archivo oculto de datos de la aplicación en Drive; pide el alcance limitado `drive.appdata`, no acceso a los demás archivos de Drive. Los archivos de esa carpeta especial no aparecen en la interfaz normal de Drive y solo esta aplicación puede leerlos. La copia de Drive almacena la base SQLite sin cifrado de extremo a extremo. El inicio de sesión conecta la sincronización, pero no bloquea el acceso a la copia local del navegador. Si dos dispositivos tienen cambios distintos, la app pide elegir qué copia conservar para evitar reemplazos silenciosos. Al usar otro navegador, conecta la cuenta y la app descarga la copia. **Exportar respaldo** permite guardar una copia adicional fuera de Drive. Las notificaciones requieren permiso y que la app siga abierta.
+
+El ID OAuth de cliente no es secreto y se incluye en el código del sitio. Nunca configures ni publiques un secreto OAuth en esta app de navegador. El token de acceso se mantiene en memoria y se solicita de nuevo cuando vence o al iniciar otra sesión del navegador.
 
 ## Ejecutar en Windows
 
@@ -35,6 +38,19 @@ Un servidor local (`localhost`) permite que el navegador use el service worker y
 4. En GitHub abre **Settings → Pages**, selecciona **Deploy from a branch**, elige `main` y la carpeta `/ (root)`, y pulsa **Save**.
 5. La URL será `https://TU_USUARIO.github.io/agenda-personal/`. GitHub Pages puede tardar unos minutos en publicarla.
 6. Abre la URL con conexión al menos una vez desde cada dispositivo y navegador donde quieras usarla sin conexión; instala la PWA desde el navegador para acceder como aplicación.
+
+## Configurar inicio de sesión y sincronización Google
+
+El sitio ya tiene el flujo de Google Identity Services y usa Google Drive `appDataFolder` para una copia SQLite por cuenta. Para habilitarlo con tu cuenta:
+
+1. En Google Cloud Console, crea o selecciona un proyecto y habilita **Google Drive API**.
+2. Configura la pantalla de consentimiento OAuth como **External**. Mientras la app esté en prueba, agrega tu cuenta Google a **Test users**.
+3. Crea un OAuth Client ID de tipo **Web application**. Añade `https://horaciosalvatierrag-cell.github.io` en **Authorized JavaScript origins**. No necesitas un redirect URI para este flujo.
+4. Copia el Client ID terminado en `.apps.googleusercontent.com` a `google-config.js`, dentro de las comillas. No copies un client secret.
+5. Haz commit y push para que GitHub Pages publique la configuración. Entra al sitio, pulsa **Conectar Google** y aprueba el acceso solicitado al espacio privado de datos de Agenda en Drive.
+6. Para usar otro dispositivo, abre el sitio con internet, inicia sesión con la misma cuenta y sincroniza. La app te pedirá elegir una copia si detecta cambios distintos.
+
+Google requiere internet para iniciar sesión y sincronizar; la agenda local sigue funcionando sin conexión y sincroniza los cambios pendientes al volver a conectarse si la sesión de Google sigue vigente.
 
 ## Esquema SQL
 
