@@ -4,6 +4,7 @@
   const DB_KEY = 'agenda-sqlite-v1';
   const STORAGE = 'AgendaPersonalSQLite';
   let db, SQL, current = new Date(), selected = iso(new Date()), view = 'month', saveTimer, diaryTimer;
+  let syncInProgress = false, syncQueue = Promise.resolve(), localMutationVersion = 0;
   const fmt = new Intl.DateTimeFormat('es-MX', { day:'numeric', month:'long', year:'numeric' });
   const monthFmt = new Intl.DateTimeFormat('es-MX', { month:'long', year:'numeric' });
   const longDay = new Intl.DateTimeFormat('es-MX', { weekday:'long', day:'numeric', month:'long' });
@@ -12,11 +13,11 @@
   function safe(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function sql(sql, args=[]) { return db.exec(sql, args); }
   function rows(query,args=[]) { const r=sql(query,args); if(!r.length)return []; const {columns,values}=r[0]; return values.map(v=>Object.fromEntries(columns.map((c,i)=>[c,v[i]]))); }
-  function persist(onSaved=null) {
+  function persist(onSaved=null, {skipSync=false}={}) {
     clearTimeout(saveTimer);
     saveTimer=setTimeout(async()=>{
       let settled=false;
-      const report=ok=>{if(settled)return;settled=true;if(ok){$('#dbStatus').textContent='Base SQLite guardada en este dispositivo';if(onSaved)onSaved(true);}else{$('#dbStatus').textContent='No se pudo guardar el respaldo local';if(onSaved)onSaved(false);}};
+      const report=ok=>{if(settled)return;settled=true;if(ok){$('#dbStatus').textContent='Base SQLite guardada en este dispositivo';if(onSaved)onSaved(true);if(!skipSync){localMutationVersion++;if(window.AgendaAuth?.account){const userId=window.AgendaAuth.account.userId;localStorage.setItem(`agenda-sync-dirty:${userId}`,'1');syncQueue=syncQueue.then(()=>uploadCurrentSnapshot(userId)).catch(error=>{console.warn('Agenda sync deferred:',error);});}}}else{$('#dbStatus').textContent='No se pudo guardar el respaldo local';if(onSaved)onSaved(false);}};
       try{
         const data=db.export(),tx=await idb('readwrite');
         tx.addEventListener('complete',()=>report(true),{once:true});
@@ -40,7 +41,60 @@
     $('#dbStatus').textContent='Base de datos local SQLite';
     $('#todayLabel').textContent=new Intl.DateTimeFormat('es-MX',{weekday:'long',day:'numeric',month:'long'}).format(new Date());
     render(); setInterval(checkReminders,30000); checkReminders();
+    window.AgendaSync={reconcile:reconcileCloud,pull:applyCloudSnapshot};
+    window.addEventListener('agenda-auth-state',event=>{if(event.detail?.account)reconcileCloud();});
+    window.AgendaAuth?.sync();
     if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+  const revisionKey=userId=>`agenda-sync-revision:${userId}`;
+  const dirtyKey=userId=>`agenda-sync-dirty:${userId}`;
+  const binaryBase64=bytes=>{let value='';for(let i=0;i<bytes.length;i+=0x8000)value+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(value);};
+  function localHasData(){return (rows('SELECT COUNT(*) AS count FROM activities')[0]?.count||0)>0||(rows('SELECT COUNT(*) AS count FROM daily_notes')[0]?.count||0)>0;}
+  function downloadSnapshot(bytes,suffix){const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.sqlite3'}));const a=document.createElement('a');a.href=url;a.download=`agenda-respaldo-${suffix}-${iso(new Date())}.sqlite`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  async function applyCloudSnapshot(base64){
+    if(typeof base64!=='string'||base64.length>Math.ceil(8*1024*1024*4/3))throw new Error('La copia en la nube excede el límite de 8 MB.');
+    const raw=atob(base64),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+    if(new TextDecoder().decode(bytes.subarray(0,16))!=='SQLite format 3\u0000')throw new Error('La copia en la nube no es un archivo SQLite válido.');
+    const fresh=new SQL.Database(bytes);
+    const unsafe=rowsFrom(fresh,"SELECT name FROM sqlite_master WHERE type IN ('trigger','view') OR (type='table' AND sql LIKE 'CREATE VIRTUAL TABLE%') LIMIT 1");
+    const columns=rowsFrom(fresh,'PRAGMA table_info(activities)')||[];
+    if(unsafe?.length||!columns.some(c=>c[1]==='id')||!columns.some(c=>c[1]==='title')||!columns.some(c=>c[1]==='date')){fresh.close();throw new Error('La copia en la nube no tiene el esquema esperado.');}
+    fresh.run("PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS completions(activity_id INTEGER NOT NULL,occurrence_date TEXT NOT NULL,completed INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(activity_id,occurrence_date)); CREATE TABLE IF NOT EXISTS daily_notes(date TEXT PRIMARY KEY,content TEXT NOT NULL DEFAULT '',important INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(date);");
+    db.close();db=fresh;persist(null,{skipSync:true});render();
+  }
+  async function uploadCurrentSnapshot(userId,baseRevision=null){
+    if(!window.AgendaAuth?.account||window.AgendaAuth.account.userId!==userId)return;
+    const versionAtStart=localMutationVersion;
+    const revision=baseRevision??Number(localStorage.getItem(revisionKey(userId))||0);
+    const response=await window.AgendaAuth.api('/api/sync',{method:'PUT',body:JSON.stringify({baseRevision:revision,snapshot:binaryBase64(db.export())})});
+    localStorage.setItem(revisionKey(userId),String(response.revision));if(versionAtStart===localMutationVersion)localStorage.removeItem(dirtyKey(userId));
+    $('#dbStatus').textContent='Agenda sincronizada';
+  }
+  async function reconcileCloud(){
+    const user=window.AgendaAuth?.account;if(!user||syncInProgress||!navigator.onLine)return;
+    syncInProgress=true;
+    try{
+      const cloud=await window.AgendaAuth.api('/api/sync');
+      const saved=localStorage.getItem(revisionKey(user.userId));
+      const known=saved===null?null:Number(saved);
+      const dirty=localStorage.getItem(dirtyKey(user.userId))==='1';
+      if(!cloud.snapshot){await uploadCurrentSnapshot(user.userId,cloud.revision);return;}
+      if(known===null){
+        if(!localHasData()){await applyCloudSnapshot(cloud.snapshot);localStorage.setItem(revisionKey(user.userId),String(cloud.revision));localStorage.removeItem(dirtyKey(user.userId));}
+        else if(confirm('Ya hay una copia en la nube y datos locales. Aceptar: descargar la copia de la nube y guardar tus datos locales como respaldo. Cancelar: conservar los datos locales y reemplazar la copia en la nube.')){downloadSnapshot(db.export(),'antes-de-recibir-nube');await applyCloudSnapshot(cloud.snapshot);localStorage.setItem(revisionKey(user.userId),String(cloud.revision));localStorage.removeItem(dirtyKey(user.userId));}
+        else{downloadSnapshot(Uint8Array.from(atob(cloud.snapshot),c=>c.charCodeAt(0)),'copia-nube');await uploadCurrentSnapshot(user.userId,cloud.revision);}
+        return;
+      }
+      if(cloud.revision!==known){
+        if(dirty&&confirm('La copia en la nube cambió desde este dispositivo. Aceptar: recibir la copia de la nube y respaldar la copia local. Cancelar: mantener la copia local, respaldar la copia de la nube y reemplazarla.')){downloadSnapshot(db.export(),'antes-de-recibir-nube');await applyCloudSnapshot(cloud.snapshot);localStorage.setItem(revisionKey(user.userId),String(cloud.revision));localStorage.removeItem(dirtyKey(user.userId));}
+        else if(dirty){downloadSnapshot(Uint8Array.from(atob(cloud.snapshot),c=>c.charCodeAt(0)),'copia-nube');await uploadCurrentSnapshot(user.userId,cloud.revision);}
+        else{await applyCloudSnapshot(cloud.snapshot);localStorage.setItem(revisionKey(user.userId),String(cloud.revision));}
+        return;
+      }
+      if(dirty)await uploadCurrentSnapshot(user.userId,cloud.revision);
+      else $('#dbStatus').textContent='Agenda sincronizada';
+    }catch(error){$('#dbStatus').textContent='Sincronización pendiente · '+(error.message||'sin conexión');}
+    finally{syncInProgress=false;}
   }
   function allActivities() { return rows('SELECT * FROM activities ORDER BY date,time,title'); }
   function occurs(a, day) {

@@ -1,0 +1,16 @@
+{
+  "name": "agenda-personal-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "14.1.0",
+    "better-sqlite3": "13.1.1",
+    "express": "5.1.0",
+    "express-rate-limit": "8.7.4",
+    "helmet": "8.1.0"
+  }
+}

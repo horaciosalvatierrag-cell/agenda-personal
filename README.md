@@ -1,44 +1,52 @@
 # Agenda personal
 
-Agenda instalable en español, con calendario perpetuo, actividades, diario personal y visor local de fotos y videos.
+Agenda instalable en español con calendario perpetuo, actividades, diario, notificaciones mientras la app está abierta y visor local de fotos y videos.
 
 ## Funciones
 
-- Calendario mensual navegable sin límite de año y lista de actividades.
-- Actividades con categorías, repetición diaria/semanal/mensual/anual y marcas de completado por fecha.
-- Diario con notas por día, marca de días importantes, notas recientes, guardado automático y botón **Guardar nota**.
-- Copia SQLite local persistente en el navegador, con exportación/importación `.sqlite`.
-- Instalación como PWA en Android y iPhone; los archivos necesarios para abrirla sin conexión se almacenan tras la primera visita.
-- Galería local: muestra fotos y videos que el usuario selecciona, sin copiarlos a SQLite ni subirlos.
+- Calendario mensual navegable sin límite de año, actividades recurrentes y marcas de completado.
+- Diario por fecha con guardado automático y botón **Guardar nota**.
+- SQLite local en IndexedDB, con exportación e importación de respaldos.
+- Acceso mediante passkeys/WebAuthn y sincronización entre dispositivos con sesión autenticada.
+- PWA instalable en Android y iPhone. El calendario y los datos locales funcionan sin conexión; la sincronización requiere internet.
+- Galería local: muestra solo los archivos o carpetas seleccionados; no sube fotos o videos.
 
-## Datos y acceso
+## Passkeys, privacidad y sincronización
 
-Las actividades y notas se guardan en IndexedDB como un archivo SQLite local. Ahora mismo no existe sincronización entre dispositivos ni autenticación. El inicio de sesión de Google se retiró. Para sincronizar de forma segura con passkeys/biometría hace falta un backend que emita y valide los retos WebAuthn y almacene la copia compartida; la publicación estática de GitHub Pages no puede hacerlo por sí sola. El navegador puede pedir huella/rostro como verificación de una passkey, con PIN u otro método del dispositivo como alternativa. La app nunca obtiene ni almacena datos biométricos.
+El inicio con Google se retiró. En un teléfono compatible, el sistema puede verificar una passkey con huella, rostro, PIN o el método de desbloqueo configurado. La app no recibe ni almacena datos biométricos. Para usar otro dispositivo, inicia sesión con una passkey disponible/sincronizada por el sistema de credenciales o usa el flujo de passkey entre dispositivos del navegador; después puedes registrar una passkey adicional en ese dispositivo.
 
-Una PWA tampoco recibe acceso general a toda la tarjeta SD. El visor solo lee los archivos o la carpeta que se selecciona explícitamente. Los archivos multimedia no se guardan ni se suben. El espacio libre del teléfono no es accesible desde la página.
+El navegador crea y firma los retos; el backend valida las firmas, el origen, el dominio de la app y la verificación del usuario. Las sesiones usan cookies `HttpOnly`, `Secure` y `SameSite=Strict`. El servidor guarda el respaldo SQLite en un volumen persistente de Railway. La conexión viaja por HTTPS; el contenido del respaldo no tiene cifrado de extremo a extremo ni cifrado adicional de aplicación en reposo. La sincronización usa revisión optimista: si otra copia cambió mientras el dispositivo estaba desconectado, la app ofrece recibir la copia de nube o conservar la local. Antes de reemplazar una copia, descarga un respaldo SQLite local.
 
-## Instalar en el celular
+GitHub Pages por sí solo no puede validar passkeys. El backend y la app se sirven desde el mismo dominio de Railway porque WebAuthn requiere que el sitio y su RP ID coincidan. GitHub conserva el código y activa el despliegue de Pages; la URL de Railway es la dirección para usar passkeys y sincronización.
 
-1. Abre la [agenda publicada](https://horaciosalvatierrag-cell.github.io/agenda-personal/) en Chrome para Android o Safari para iPhone/iPad.
-2. Pulsa **Instalar app** y confirma. En iPhone, usa **Compartir → Añadir a pantalla de inicio**.
-3. Abre **Fotos y videos** y elige archivos o una carpeta desde el selector del sistema.
+## Fotos, videos y almacenamiento
 
-## Ejecutar en Windows
+La galería no sube ni guarda medios, por lo que la agenda no consume espacio de nube para fotos. La app no puede consultar el espacio libre del teléfono ni recorrer automáticamente la SD; el selector del sistema solo entrega los archivos o la carpeta que el usuario elige.
 
-1. Instala Node.js si aún no está instalado.
-2. Abre PowerShell en esta carpeta y ejecuta `npx serve .`.
-3. Abre la URL local de la consola, normalmente `http://localhost:3000`.
+## Despliegue en Railway
 
-Se necesita un servidor `localhost` para usar el service worker y SQLite WebAssembly; no abras `index.html` con doble clic.
+El servicio usa Node.js y SQLite en un volumen montado en `/data`. Configuración requerida:
 
-## Publicación
+- `DB_PATH=/data/agenda.sqlite`
+- `APP_ORIGIN=https://<dominio-del-servicio>` (sin barra final)
+- `PORT` lo proporciona Railway.
+
+La app y `/api` se sirven desde el mismo host. El volumen persistente es necesario para conservar cuentas, passkeys y respaldos entre despliegues.
+
+## Desarrollo local
+
+Requiere Node.js 22 o posterior. Desde la raíz del repositorio:
+
+```powershell
+npm install
+$env:APP_ORIGIN = 'http://localhost:3000'
+npm start
+```
+
+Abre `http://localhost:3000`. WebAuthn admite `localhost` como origen seguro de desarrollo. Los datos del servidor local se guardan en `server/data/agenda.sqlite`.
+
+## Repositorio y base local
 
 Repositorio: <https://github.com/horaciosalvatierrag-cell/agenda-personal>
 
-Sitio: <https://horaciosalvatierrag-cell.github.io/agenda-personal/>
-
-GitHub Actions publica automáticamente los cambios de `main` en GitHub Pages.
-
-## Base de datos
-
-`schema.sql` describe las tablas `activities`, `completions` y `daily_notes`. `sql.js` se incluye en `vendor/` y guarda SQLite localmente; **Exportar respaldo** genera un archivo SQLite estándar.
+`schema.sql` describe las tablas locales `activities`, `completions` y `daily_notes`. `sql.js` mantiene la copia SQLite del navegador. El backend sincroniza esa copia como un archivo SQLite validado por la app antes de cargarlo.
