@@ -1,52 +1,25 @@
-# Agenda personal
+# Diario personal
 
-Agenda instalable en español con calendario perpetuo, actividades, diario, notificaciones mientras la app está abierta y visor local de fotos y videos.
+Aplicación web instalable para escribir notas por día, marcarlas como importantes y volver a consultar las notas recientes.
 
-## Funciones
+## Guardado y privacidad
 
-- Calendario mensual navegable sin límite de año, actividades recurrentes y marcas de completado.
-- Diario por fecha con guardado automático y botón **Guardar nota**.
-- SQLite local en IndexedDB, con exportación e importación de respaldos.
-- Acceso mediante passkeys/WebAuthn y sincronización entre dispositivos con sesión autenticada.
-- PWA instalable en Android y iPhone. El calendario y los datos locales funcionan sin conexión; la sincronización requiere internet.
-- Galería local: muestra solo los archivos o carpetas seleccionados; no sube fotos o videos.
+- Las notas se guardan como SQLite en el almacenamiento local del navegador (IndexedDB).
+- El guardado automático y el botón Guardar nota usan la misma ruta de guardado. El estado confirma el resultado después de que IndexedDB completa la escritura.
+- Funciona sin conexión después de abrir la aplicación una vez.
+- Usa Exportar respaldo para guardar una copia .sqlite. Los datos locales no se sincronizan entre dispositivos.
+- Borrar los datos del navegador puede borrar las notas; guarda respaldos periódicos.
 
-## Passkeys, privacidad y sincronización
+## Instalar
 
-El inicio con Google se retiró. En un teléfono compatible, el sistema puede verificar una passkey con huella, rostro, PIN o el método de desbloqueo configurado. La app no recibe ni almacena datos biométricos. Para usar otro dispositivo, inicia sesión con una passkey disponible/sincronizada por el sistema de credenciales o usa el flujo de passkey entre dispositivos del navegador; después puedes registrar una passkey adicional en ese dispositivo.
-
-El navegador crea y firma los retos; el backend valida las firmas, el origen, el dominio de la app y la verificación del usuario. Las sesiones usan cookies `HttpOnly`, `Secure` y `SameSite=Strict`. El servidor guarda el respaldo SQLite en un volumen persistente de Railway. La conexión viaja por HTTPS; el contenido del respaldo no tiene cifrado de extremo a extremo ni cifrado adicional de aplicación en reposo. La sincronización usa revisión optimista: si otra copia cambió mientras el dispositivo estaba desconectado, la app ofrece recibir la copia de nube o conservar la local. Antes de reemplazar una copia, descarga un respaldo SQLite local.
-
-GitHub Pages por sí solo no puede validar passkeys. El backend y la app se sirven desde el mismo dominio de Railway porque WebAuthn requiere que el sitio y su RP ID coincidan. GitHub conserva el código y activa el despliegue de Pages; la URL de Railway es la dirección para usar passkeys y sincronización.
-
-## Fotos, videos y almacenamiento
-
-La galería no sube ni guarda medios, por lo que la agenda no consume espacio de nube para fotos. La app no puede consultar el espacio libre del teléfono ni recorrer automáticamente la SD; el selector del sistema solo entrega los archivos o la carpeta que el usuario elige.
-
-## Despliegue en Railway
-
-El servicio usa Node.js y SQLite en un volumen montado en `/data`. Configuración requerida:
-
-- `DB_PATH=/data/agenda.sqlite`
-- `APP_ORIGIN=https://<dominio-del-servicio>` (sin barra final)
-- `PORT` lo proporciona Railway.
-
-La app y `/api` se sirven desde el mismo host. El volumen persistente es necesario para conservar cuentas, passkeys y respaldos entre despliegues.
+Abre la aplicación por HTTPS y pulsa Instalar app. También puedes agregarla desde el menú del navegador.
 
 ## Desarrollo local
 
-Requiere Node.js 22 o posterior. Desde la raíz del repositorio:
+Sirve la carpeta por HTTP (por ejemplo, con npx serve .) y abre la dirección que indique el servidor. Se necesita HTTPS o localhost para instalar la PWA y permitir el almacenamiento seguro del navegador.
 
-```powershell
-npm install
-$env:APP_ORIGIN = 'http://localhost:3000'
-npm start
-```
+## Publicación
 
-Abre `http://localhost:3000`. WebAuthn admite `localhost` como origen seguro de desarrollo. Los datos del servidor local se guardan en `server/data/agenda.sqlite`.
-
-## Repositorio y base local
+El repositorio publica los archivos estáticos en GitHub Pages al actualizar la rama main. GitHub Pages es el alojamiento de esta versión; Railway ya no forma parte del funcionamiento del Diario.
 
 Repositorio: <https://github.com/horaciosalvatierrag-cell/agenda-personal>
-
-`schema.sql` describe las tablas locales `activities`, `completions` y `daily_notes`. `sql.js` mantiene la copia SQLite del navegador. El backend sincroniza esa copia como un archivo SQLite validado por la app antes de cargarlo.
