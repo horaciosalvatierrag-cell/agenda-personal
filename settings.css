@@ -1,0 +1,52 @@
+.settings-view{display:grid;gap:14px}.settings-panel{padding:22px}.settings-panel h2{margin:0 0 6px;font-size:17px}.settings-intro{margin:0 0 18px;color:var(--muted);font-size:11px;line-height:1.55}.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.settings-grid label{display:grid;gap:7px;color:var(--ink);font-size:11px;font-weight:600}.settings-grid select{width:100%;min-height:38px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;color:var(--ink);background:var(--paper);font:inherit}.settings-status{margin:14px 0 0;color:var(--muted);font-size:10px}@media(max-width:600px){.settings-panel{padding:16px}.settings-grid{grid-template-columns:1fr}}
+
+html[data-theme="dark"]{color-scheme:dark;--blue:#4daaf2;--blue-dark:#8ac9ff;--blue-soft:#173650;--ink:#edf2f7;--muted:#b0bac4;--subtle:#8995a1;--line:#3c4651;--paper:#20262d;--canvas:#151a20;--green:#65c466;--green-soft:#18341f;--purple:#aaa5ff;--purple-soft:#292744;--orange:#ff9c70;--orange-soft:#3a281f;--amber:#e4c55b;--amber-soft:#39331d;--shadow:0 2px 8px #0005,0 14px 34px #0003}
+html[data-theme="dark"] body{background:radial-gradient(ellipse at 82% 0,#1b2d3c 0,transparent 34rem),var(--canvas)}
+html[data-theme="dark"] .sidebar{background:#1b2128ed;border-color:var(--line)}
+html[data-theme="dark"] .brand-mark{color:#fff}
+html[data-theme="dark"] .new-btn,html[data-theme="dark"] .save-btn{color:#071625}
+html[data-theme="dark"] .nav-item{color:#c6d0d9}
+html[data-theme="dark"] .nav-item:hover,html[data-theme="dark"] .finance-tabs button:hover{background:#2b333c}
+html[data-theme="dark"] .nav-item.active,html[data-theme="dark"] .finance-tabs button.active{color:#a9d9ff;background:var(--blue-soft)}
+html[data-theme="dark"] .side-foot,html[data-theme="dark"] .finance-tabs,html[data-theme="dark"] .contacts-tools{border-color:var(--line);background:#232a32}
+html[data-theme="dark"] .install-btn{color:#a9d9ff;border-color:#395a74;background:#202f3c}
+html[data-theme="dark"] .install-btn:hover{background:#293d4d}
+html[data-theme="dark"] .icon-btn,html[data-theme="dark"] .avatar,html[data-theme="dark"] .arrow,html[data-theme="dark"] .close-btn{color:var(--ink);border-color:var(--line);background:#252d35}
+html[data-theme="dark"] .icon-btn:hover,html[data-theme="dark"] .arrow:hover,html[data-theme="dark"] .today-btn:hover,html[data-theme="dark"] .small-add:hover{background:#293d4d}
+html[data-theme="dark"] .panel,html[data-theme="dark"] .finance-local-note,html[data-theme="dark"] .finance-notice,html[data-theme="dark"] .contact-card,html[data-theme="dark"] .vault-record,html[data-theme="dark"] .voice-entry{border-color:var(--line);background:var(--paper)}
+html[data-theme="dark"] .today-btn,html[data-theme="dark"] .view-chip,html[data-theme="dark"] .finance-tabs button,html[data-theme="dark"] .small-add,html[data-theme="dark"] .media-folder-btn,html[data-theme="dark"] .cancel-btn,html[data-theme="dark"] .auth-btn,html[data-theme="dark"] .voice-import-label{color:#d5e0e9;border-color:var(--line);background:#252d35}
+html[data-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=file]),html[data-theme="dark"] select,html[data-theme="dark"] textarea,html[data-theme="dark"] .finance-form-grid input,html[data-theme="dark"] .finance-form-grid select,html[data-theme="dark"] .finance-form-grid textarea,html[data-theme="dark"] .finance-payment-form input,html[data-theme="dark"] .finance-payment-form select,html[data-theme="dark"] .finance-savings-form input,html[data-theme="dark"] .finance-savings-form select{color:var(--ink);border-color:var(--line);background:#171c22}
+html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:#909daa}
+html[data-theme="dark"] .calendar-toolbar,html[data-theme="dark"] .weekdays,html[data-theme="dark"] .day-entry,html[data-theme="dark"] .finance-row,html[data-theme="dark"] .finance-payment-form,html[data-theme="dark"] .finance-savings-form,html[data-theme="dark"] .finance-calendar-row,html[data-theme="dark"] .contacts-tools,html[data-theme="dark"] .contact-reminder,html[data-theme="dark"] .contact-history-item,html[data-theme="dark"] .folder-thumb,html[data-theme="dark"] .media-card{border-color:var(--line)}
+html[data-theme="dark"] .day-cell{border-color:#303943}
+html[data-theme="dark"] .day-cell:hover,html[data-theme="dark"] .day-cell.dim,html[data-theme="dark"] .day-cell.selected:not(.today){background:#202a33}
+html[data-theme="dark"] .day-number,html[data-theme="dark"] .arrow,html[data-theme="dark"] .today-btn,html[data-theme="dark"] .view-chip,html[data-theme="dark"] .finance-period input,html[data-theme="dark"] .finance-filter input,html[data-theme="dark"] .finance-filter select,html[data-theme="dark"] .finance-report-controls input,html[data-theme="dark"] .finance-report-controls select{color:#dbe5ed;background:#252d35}
+html[data-theme="dark"] .event-pill{color:#a9d9ff;background:#173650}
+html[data-theme="dark"] .event-pill.work{color:#c5c0ff;background:#292744}
+html[data-theme="dark"] .event-pill.health{color:#ffb18c;background:#3a281f}
+html[data-theme="dark"] .event-pill.home{color:#f0d978;background:#39331d}
+html[data-theme="dark"] .list-row,html[data-theme="dark"] .diary-recent-item,html[data-theme="dark"] .folder-thumb{color:var(--ink);border-color:var(--line);background:#20262d}
+html[data-theme="dark"] .folder-thumb.selected{border-color:var(--blue);background:#173650}
+html[data-theme="dark"] .contact-avatar{color:#a9d9ff;background:#173650}
+html[data-theme="dark"] .finance-form-grid label,html[data-theme="dark"] .finance-payment-form label,html[data-theme="dark"] .finance-savings-form label,html[data-theme="dark"] .finance-filter label,html[data-theme="dark"] .finance-report-controls label,html[data-theme="dark"] .finance-period,html[data-theme="dark"] .finance-filter h3,html[data-theme="dark"] .finance-block h4,html[data-theme="dark"] .finance-row,html[data-theme="dark"] .finance-row strong,html[data-theme="dark"] .finance-row>b,html[data-theme="dark"] .finance-debt-stats b,html[data-theme="dark"] .finance-budget-line b{color:#d6e0e8}
+html[data-theme="dark"] .finance-row small,html[data-theme="dark"] .finance-debt-stats span,html[data-theme="dark"] .finance-budget-line span{color:#a9b5c0}
+html[data-theme="dark"] .finance-notice{color:#a9d9ff;border-color:#395a74;background:#202f3c}
+html[data-theme="dark"] .contacts-status{background:#18341f;color:#8de094}
+html[data-theme="dark"] .contacts-status.error{background:#3b2424;color:#ffaaa5}
+html[data-theme="dark"] .vault-status.error,html[data-theme="dark"] .finance-negative,html[data-theme="dark"] .finance-delete:hover{color:#ffaaa5!important}
+html[data-theme="dark"] .finance-delete:hover{background:#3b2424}
+html[data-theme="dark"] .finance-progress,html[data-theme="dark"] .finance-progress::-webkit-progress-bar,html[data-theme="dark"] .finance-category-progress::-webkit-progress-bar{background:#343d46}
+html[data-theme="dark"] .media-viewer{background:#080b0e}
+html[data-theme="dark"] dialog{color:var(--ink);border-color:var(--line);background:var(--paper)}
+html[data-theme="dark"] dialog::backdrop{background:#0009}
+html[data-theme="dark"] .voice-recording-indicator{color:#ffaaa5}
+html[data-theme="dark"] .diary-voice-status.is-error{color:#ffaaa5}
+html[data-theme="dark"] .contacts-panel,html[data-theme="dark"] .contact-detail,html[data-theme="dark"] .vault-panel,html[data-theme="dark"] .vault-form,html[data-theme="dark"] .vault-record-form,html[data-theme="dark"] .vault-records-heading,html[data-theme="dark"] .diary-voice,html[data-theme="dark"] .diary-editor,html[data-theme="dark"] .diary-recent,html[data-theme="dark"] .finance-block,html[data-theme="dark"] .finance-form,html[data-theme="dark"] .settings-panel{color:var(--ink);border-color:var(--line);background:var(--paper)}
+html[data-theme="dark"] .contacts-tools,html[data-theme="dark"] .finance-tabs{background:#232a32}
+html[data-theme="dark"] .contacts-form input:not([type=checkbox]):not([type=file]),html[data-theme="dark"] .contacts-form select,html[data-theme="dark"] .contacts-form textarea,html[data-theme="dark"] .contacts-inline-form input,html[data-theme="dark"] .contacts-inline-form select,html[data-theme="dark"] .vault-pin-field input,html[data-theme="dark"] .vault-search-label input,html[data-theme="dark"] .vault-record-form input,html[data-theme="dark"] .vault-record-form textarea{color:var(--ink);border-color:var(--line);background:#171c22}
+html[data-theme="dark"] .contacts-form label,html[data-theme="dark"] .contacts-inline-form label,html[data-theme="dark"] .contact-fields dt,html[data-theme="dark"] .vault-label,html[data-theme="dark"] .finance-debt-head,html[data-theme="dark"] .finance-form-grid label{color:#d6e0e8}
+html[data-theme="dark"] .contact-quick-actions a,html[data-theme="dark"] .contact-card-actions .text-btn,html[data-theme="dark"] .vault-eye{color:#a9d9ff}
+html[data-theme="dark"] .contacts-tools,html[data-theme="dark"] .contact-reminder,html[data-theme="dark"] .contact-history-item,html[data-theme="dark"] .finance-tabs,html[data-theme="dark"] .finance-payment-form,html[data-theme="dark"] .finance-savings-form{border-color:var(--line)}
+html[data-theme="dark"] .contacts-status.error,html[data-theme="dark"] .vault-status.error{color:#ffaaa5;border-color:#613638;background:#3b2424}
+html[data-theme="dark"] .finance-progress,html[data-theme="dark"] .finance-mini-progress,html[data-theme="dark"] .finance-category-progress,html[data-theme="dark"] .finance-progress::-webkit-progress-bar,html[data-theme="dark"] .finance-mini-progress::-webkit-progress-bar,html[data-theme="dark"] .finance-category-progress::-webkit-progress-bar{background:#343d46}
+@media(prefers-reduced-motion:reduce){.voice-recording-indicator i{animation:none}}
