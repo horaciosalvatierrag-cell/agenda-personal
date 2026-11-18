@@ -5,6 +5,7 @@
   const STORAGE = 'AgendaPersonalSQLite';
   let db, SQL, current = new Date(), selected = iso(new Date()), view = 'month', saveTimer, diaryTimer;
   let syncInProgress = false, syncQueue = Promise.resolve(), localMutationVersion = 0;
+  let mediaUrls = [], mediaDrag = null, mediaClickGuard = false, mediaResizeFrame = 0;
   const fmt = new Intl.DateTimeFormat('es-MX', { day:'numeric', month:'long', year:'numeric' });
   const monthFmt = new Intl.DateTimeFormat('es-MX', { month:'long', year:'numeric' });
   const longDay = new Intl.DateTimeFormat('es-MX', { weekday:'long', day:'numeric', month:'long' });
@@ -140,8 +141,61 @@
   function scheduleDiarySave(){clearTimeout(diaryTimer);$('#diarySaveStatus').textContent='Cambios pendientes…';diaryTimer=setTimeout(()=>{diaryTimer=null;saveDiary();},450);}
   function flushDiary(){if(diaryTimer){clearTimeout(diaryTimer);diaryTimer=null;saveDiary();}}
   function switchDiaryDate(day){flushDiary();selected=day;renderDiary();}
-  function clearMedia(){for(const url of mediaUrls)URL.revokeObjectURL(url);mediaUrls=[];$('#mediaGrid').innerHTML='';$('#mediaFiles').value='';$('#mediaFolder').value='';$('#mediaStatus').textContent='Selecciona fotos, videos o una carpeta para visualizarlos.';$('#clearMediaBtn').classList.add('hidden');}
-  function showMedia(files){clearMedia();const media=[...files].filter(file=>{const type=file.type.toLowerCase();return (type.startsWith('image/')&&!type.includes('svg'))||type.startsWith('video/')||/\.(png|jpe?g|gif|webp|bmp|avif|heic|heif|mp4|m4v|mov|webm|3gp|mkv)$/i.test(file.name)}).sort((a,b)=>a.name.localeCompare(b.name,'es',{numeric:true}));if(!media.length){$('#mediaStatus').textContent='No se encontraron imágenes o videos en la selección.';return;}$('#mediaStatus').textContent=`${media.length} ${media.length===1?'archivo seleccionado':'archivos seleccionados'} · Solo se visualizan en este dispositivo.`;$('#clearMediaBtn').classList.remove('hidden');$('#mediaGrid').innerHTML=media.map(file=>{const url=URL.createObjectURL(file);mediaUrls.push(url);const isVideo=file.type.startsWith('video/')||/\.(mp4|m4v|mov|webm|3gp|mkv)$/i.test(file.name);return `<figure class="media-card">${isVideo?`<video src="${url}" controls playsinline preload="metadata" aria-label="${safe(file.name)}"></video>`:`<img src="${url}" alt="${safe(file.name)}" loading="lazy">`}<figcaption><span>${safe(file.name)}</span><small>${(file.size/1048576).toFixed(1)} MB${file.webkitRelativePath?` · ${safe(file.webkitRelativePath.split('/').slice(0,-1).join('/'))}`:''}</small></figcaption></figure>`;}).join('');}
+  function clearMedia(){for(const url of mediaUrls)URL.revokeObjectURL(url);mediaUrls=[];$('#mediaGrid').innerHTML='';$('#mediaGrid').scrollLeft=0;$('#mediaFiles').value='';$('#mediaFolder').value='';$('#mediaStatus').textContent='Selecciona fotos, videos o una carpeta para visualizarlos.';$('#clearMediaBtn').classList.add('hidden');}
+  function updateMediaCardSizes(){
+    const grid=$('#mediaGrid'),width=grid.clientWidth;if(!width)return;
+    const gap=parseFloat(getComputedStyle(grid).columnGap)||0,narrow=window.matchMedia('(max-width: 980px)').matches;
+    const columns=narrow?2:Math.max(1,Math.floor((width+gap)/(175+gap)));
+    grid.style.setProperty('--media-card-width',`${Math.max(1,(width-gap*(columns-1))/columns)}px`);
+  }
+  function scrollMedia(direction,behavior='smooth'){
+    const grid=$('#mediaGrid'),card=grid.querySelector('.media-card');
+    grid.scrollBy({left:direction*((card?.getBoundingClientRect().width||grid.clientWidth)+parseFloat(getComputedStyle(grid).columnGap||0)),behavior});
+  }
+  function showMedia(files){
+    clearMedia();
+    const media=[...files].filter(file=>{const type=file.type.toLowerCase();return (type.startsWith('image/')&&!type.includes('svg'))||type.startsWith('video/')||/\.(png|jpe?g|gif|webp|bmp|avif|heic|heif|mp4|m4v|mov|webm|3gp|mkv)$/i.test(file.name)}).sort((a,b)=>a.name.localeCompare(b.name,'es',{numeric:true}));
+    if(!media.length){$('#mediaStatus').textContent='No se encontraron imágenes o videos en la selección.';return;}
+    $('#mediaStatus').textContent=`${media.length} ${media.length===1?'archivo seleccionado':'archivos seleccionados'} · Solo se visualizan en este dispositivo.`;
+    $('#clearMediaBtn').classList.remove('hidden');
+    const grid=$('#mediaGrid');
+    grid.setAttribute('role','region');grid.setAttribute('aria-roledescription','carrusel');grid.setAttribute('aria-label','Galería de imágenes y videos');grid.tabIndex=0;
+    grid.innerHTML=media.map(file=>{
+      const url=URL.createObjectURL(file);mediaUrls.push(url);
+      const isVideo=file.type.startsWith('video/')||/\.(mp4|m4v|mov|webm|3gp|mkv)$/i.test(file.name);
+      return `<figure class="media-card">${isVideo?`<video src="${url}" controls playsinline preload="none" aria-label="${safe(file.name)}"></video>`:`<img src="${url}" alt="${safe(file.name)}" loading="lazy" decoding="async" draggable="false">`}<figcaption><span>${safe(file.name)}</span><small>${(file.size/1048576).toFixed(1)} MB${file.webkitRelativePath?` · ${safe(file.webkitRelativePath.split('/').slice(0,-1).join('/'))}`:''}</small></figcaption></figure>`;
+    }).join('');
+    updateMediaCardSizes();
+  }
+  const mediaGrid=$('#mediaGrid');
+  mediaGrid.addEventListener('wheel',event=>{
+    if(Math.abs(event.deltaY)>Math.abs(event.deltaX)&&mediaGrid.scrollWidth>mediaGrid.clientWidth){event.preventDefault();mediaGrid.scrollBy({left:event.deltaY,behavior:'auto'});}
+  },{passive:false});
+  mediaGrid.addEventListener('keydown',event=>{
+    if((event.key==='ArrowRight'||event.key==='ArrowLeft')&&!event.target.closest('video,button,input,textarea,select')){event.preventDefault();scrollMedia(event.key==='ArrowRight'?1:-1);}
+  });
+  mediaGrid.addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='mouse'||event.button!==0||event.target.closest('video,button,a,input'))return;
+    mediaDrag={pointerId:event.pointerId,startX:event.clientX,startScroll:mediaGrid.scrollLeft,moved:false};event.preventDefault();
+  });
+  window.addEventListener('pointermove',event=>{
+    if(!mediaDrag||event.pointerId!==mediaDrag.pointerId)return;
+    const distance=event.clientX-mediaDrag.startX;
+    if(Math.abs(distance)>5){mediaDrag.moved=true;mediaGrid.classList.add('is-dragging');}
+    if(mediaDrag.moved){mediaGrid.scrollLeft=mediaDrag.startScroll-distance;event.preventDefault();}
+  },{passive:false});
+  window.addEventListener('pointerup',event=>{
+    if(!mediaDrag||event.pointerId!==mediaDrag.pointerId)return;
+    mediaClickGuard=mediaDrag.moved;mediaDrag=null;mediaGrid.classList.remove('is-dragging');
+    if(mediaClickGuard)setTimeout(()=>{mediaClickGuard=false;},0);
+  });
+  window.addEventListener('resize',()=>{
+    cancelAnimationFrame(mediaResizeFrame);
+    mediaResizeFrame=requestAnimationFrame(updateMediaCardSizes);
+  });
+  mediaGrid.addEventListener('click',event=>{
+    if(mediaClickGuard){event.preventDefault();event.stopPropagation();mediaClickGuard=false;}
+  },true);
   function installationHelp(){const ua=navigator.userAgent,ios=/iPad|iPhone|iPod/.test(ua),android=/Android/i.test(ua);$('#installInstructions').textContent=ios?'En Safari, toca Compartir (el cuadro con la flecha hacia arriba), elige “Añadir a pantalla de inicio” y confirma con “Añadir”.':android?'En Chrome, abre el menú ⋮ y toca “Instalar aplicación” o “Añadir a pantalla principal”. Confirma para poner Agenda en el inicio.': 'Abre el menú de instalación de tu navegador (normalmente el icono junto a la barra de dirección o el menú) y selecciona “Instalar Agenda”.';if(!$('#installDialog').open)$('#installDialog').showModal();}
   function updateInstallButton(){const installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;$('#installBtnLabel').textContent=installed?'Instalada':'Instalar app';$('#installBtn').disabled=installed;}
   function renderWeek(){const today=new Date(),monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));let count=0,bits='';for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const has=onDay(iso(d)).length>0;if(has)count++;bits+=`<i class="${has?'has':''}"></i>`;}$('#weekSummary').textContent=`${count} ${count===1?'día con actividad':'días con actividad'}`;$('#weekDots').innerHTML=bits;}

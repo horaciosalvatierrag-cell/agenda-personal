@@ -274,9 +274,11 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .media-folder-btn { min-height: 34px; padding: 7px 10px; border: 1px solid #d8dfe4; border-radius: 6px; color: #4e5c66; background: white; font-size: 10px; font-weight: 600; cursor: pointer; }
 .media-folder-btn:hover { border-color: #a8cfe9; background: #f6fbff; }
 .media-status { padding: 13px 1px; color: #72808a; font-size: 10px; }
-.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 12px; }
-.media-card { overflow: hidden; min-width: 0; margin: 0; border: 1px solid #e2e7eb; border-radius: 8px; background: #fff; }
+.media-grid { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x proximity; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; cursor: grab; }
+.media-grid.is-dragging { cursor: grabbing; scroll-behavior: auto; user-select: none; }
+.media-card { flex: 0 0 var(--media-card-width, 175px); overflow: hidden; min-width: 0; margin: 0; border: 1px solid #e2e7eb; border-radius: 8px; background: #fff; scroll-snap-align: start; }
 .media-card img, .media-card video { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; color: white; background: #17212a; }
+.media-card img { -webkit-user-drag: none; user-select: none; }
 .media-card figcaption { overflow: hidden; padding: 8px 9px; }
 .media-card figcaption span, .media-card figcaption small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .media-card figcaption span { color: #3e4c56; font-size: 10px; font-weight: 600; }
@@ -345,7 +347,7 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .category-tag { display: none; }
   .install-modal { padding: 20px 16px; }
   .media-view { padding: 15px 12px; }
-  .media-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .media-grid { gap: 8px; }
   .media-card figcaption { padding: 7px; }
   .diary-editor, .diary-recent { padding: 15px 13px; }
   .diary-top { align-items: flex-start; flex-direction: column; gap: 13px; }
