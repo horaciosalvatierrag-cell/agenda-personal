@@ -22,7 +22,9 @@ GitHub Pages por sí solo no puede validar passkeys. El backend y la app se sirv
 
 ## Fotos, videos y almacenamiento
 
-La galería no sube ni guarda medios, por lo que la agenda no consume espacio de nube para fotos. La app no puede consultar el espacio libre del teléfono ni recorrer automáticamente la SD; el selector del sistema solo entrega los archivos o la carpeta que el usuario elige.
+La galería no sube ni guarda las fotos en la base de datos de la Agenda. En navegadores compatibles con File System Access API, **Elegir carpeta** conserva en IndexedDB el identificador local de la carpeta. En visitas posteriores intenta reabrirla automáticamente cuando el navegador mantenga el permiso; si este vuelve a `prompt`, se solicita permiso al pulsar el mismo botón, sin volver a elegir la carpeta. El permiso puede ser revocado desde el navegador.
+
+Las imágenes de subcarpetas se recorren de forma recursiva. Las miniaturas se generan bajo demanda y la vista principal lee en resolución original solo la fotografía seleccionada. Las URL temporales se liberan al cambiar de imagen o salir de la página. En navegadores sin `showDirectoryPicker()` se conserva el selector de carpeta `webkitdirectory`; sus archivos son temporales y el navegador no puede recordar la carpeta. HEIC/HEIF solo se muestra si el navegador puede decodificarlo. Ningún archivo se transmite a servicios externos.
 
 ## Finanzas personales
 
