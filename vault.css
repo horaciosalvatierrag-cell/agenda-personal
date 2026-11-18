@@ -1,0 +1,43 @@
+/* Estilos aislados de la bóveda; no alteran los componentes existentes. */
+#vaultView:not(.hidden) { display: grid; gap: 16px; }
+.vault-panel { width: 100%; padding: 22px; }
+.vault-heading, .vault-toolbar, .vault-records-heading, .vault-record-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.vault-heading h2, .vault-toolbar h2, .vault-records-heading h3, .vault-record-form h3 { margin: 4px 0 0; }
+.vault-muted, .vault-security-note { color: var(--muted); font-size: 13px; line-height: 1.55; }
+.vault-security-note { margin: 14px 0 0; }
+.vault-form { display: grid; gap: 15px; max-width: 440px; }
+.vault-label { display: grid; gap: 7px; color: var(--ink); font-size: 13px; font-weight: 600; }
+.vault-label small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.vault-pin-field, .vault-password-value { display: flex; align-items: center; gap: 7px; }
+.vault-pin-field input, .vault-label > input, .vault-label textarea, .vault-search-label input, .vault-password-value input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--paper); }
+.vault-pin-field input:focus, .vault-label > input:focus, .vault-label textarea:focus, .vault-search-label input:focus { outline: 2px solid var(--blue-soft); border-color: var(--blue); }
+.vault-eye { flex: 0 0 auto; min-width: 38px; min-height: 38px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); cursor: pointer; }
+.vault-status { min-height: 20px; color: var(--green); font-size: 13px; }
+.vault-status.error { color: #b42318; }
+.vault-record-form { display: grid; gap: 16px; }
+.vault-record-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.vault-wide { grid-column: 1 / -1; }
+.vault-form-actions, .vault-record-actions { display: flex; align-items: center; gap: 9px; }
+.vault-records-heading { margin-bottom: 14px; }
+.vault-search-label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.vault-search-label input { min-width: 220px; }
+.vault-record-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; }
+.vault-record { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.vault-record-head { align-items: flex-start; }
+.vault-record-head > div:first-child { display: grid; gap: 4px; min-width: 0; }
+.vault-record-head small, .vault-secret-line > span { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.vault-record-actions { gap: 4px; }
+.vault-record-actions .text-btn { padding: 5px; }
+.vault-delete { color: #b42318; }
+.vault-secret-line { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: center; gap: 8px; margin-top: 13px; }
+.vault-password-value input { padding: 7px 9px; }
+.vault-record-notes { margin: 12px 0 0; color: var(--muted); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vault-empty { grid-column: 1 / -1; padding: 18px; color: var(--muted); text-align: center; }
+@media (max-width: 640px) {
+  .vault-panel { padding: 16px; }
+  .vault-record-grid { grid-template-columns: 1fr; }
+  .vault-wide { grid-column: auto; }
+  .vault-records-heading, .vault-toolbar { align-items: flex-start; flex-direction: column; }
+  .vault-search-label, .vault-search-label input { width: 100%; min-width: 0; }
+  .vault-record-head { flex-direction: column; }
+}

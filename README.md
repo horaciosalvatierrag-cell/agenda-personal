@@ -32,6 +32,12 @@ Las finanzas se guardan en una base IndexedDB independiente (`AgendaFinanzasLoca
 
 El balance mensual resta a los ingresos los gastos registrados y los abonos que no tengan un gasto vinculado. El disponible resta los gastos que no están vinculados a un abono, todos los abonos y las aportaciones a ahorro; si registras el abono junto a un gasto, se contabiliza una sola vez. Si detecta un gasto existente con la misma fecha e importe al capturar el abono, permite vincularlos. Los retiros solo actualizan el saldo del objetivo de ahorro. Los movimientos pendientes aparecen identificados, y el resumen usa los registros del mes seleccionado.
 
+## Bóveda de contraseñas
+
+La bóveda guarda los registros en una base IndexedDB independiente (`AgendaPasswordVault`) en el navegador y dispositivo actuales; no se sincroniza ni se envía al servicio de Agenda. Al primer acceso, el usuario crea y confirma su propio PIN de seis dígitos. El PIN nunca se guarda: Web Crypto deriva una clave AES-256-GCM mediante PBKDF2-SHA-256 con sal aleatoria (600 000 iteraciones). Cada registro y la comprobación del PIN se cifran con IV aleatorios distintos. La clave solo permanece en memoria mientras la bóveda está desbloqueada; se bloquea al salir de la sección, ocultar la página o tras cinco minutos sin actividad.
+
+Un PIN de seis dígitos tiene solo un millón de combinaciones posibles. PBKDF2 y los bloqueos temporales dificultan intentos, pero no hacen que un PIN corto resista indefinidamente un ataque fuera de línea sobre una copia del almacenamiento. Elige un PIN que no uses en otros servicios, conserva el dispositivo protegido y no borres los datos del navegador: al olvidar el PIN no hay recuperación. La bóveda requiere HTTPS o `localhost` y un navegador con IndexedDB y Web Crypto.
+
 ## Despliegue en Railway
 
 El servicio usa Node.js y SQLite en un volumen montado en `/data`. Configuración requerida:
