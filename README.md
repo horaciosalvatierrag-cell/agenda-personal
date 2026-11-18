@@ -11,6 +11,7 @@ Agenda instalable en español con calendario perpetuo, actividades, diario, noti
 - PWA instalable en Android y iPhone. El calendario y los datos locales funcionan sin conexión; la sincronización requiere internet.
 - Galería local: muestra solo los archivos o carpetas seleccionados; no sube fotos o videos.
 - Finanzas personales: movimientos de ingresos y gastos, deudas y abonos, objetivos de ahorro, presupuestos, resumen, calendario y reportes con exportación CSV e impresión.
+- Contactos privados: datos y archivos cifrados localmente, historial, recordatorios, importación CSV/vCard y respaldo JSON; independientes de la agenda nativa y de la sincronización.
 
 ## Passkeys, privacidad y sincronización
 
@@ -37,6 +38,12 @@ El balance mensual resta a los ingresos los gastos registrados y los abonos que 
 La bóveda guarda los registros en una base IndexedDB independiente (`AgendaPasswordVault`) en el navegador y dispositivo actuales; no se sincroniza ni se envía al servicio de Agenda. Al primer acceso, el usuario crea y confirma su propio PIN de seis dígitos. El PIN nunca se guarda: Web Crypto deriva una clave AES-256-GCM mediante PBKDF2-SHA-256 con sal aleatoria (600 000 iteraciones). Cada registro y la comprobación del PIN se cifran con IV aleatorios distintos. La clave solo permanece en memoria mientras la bóveda está desbloqueada; se bloquea al salir de la sección, ocultar la página o tras cinco minutos sin actividad.
 
 Un PIN de seis dígitos tiene solo un millón de combinaciones posibles. PBKDF2 y los bloqueos temporales dificultan intentos, pero no hacen que un PIN corto resista indefinidamente un ataque fuera de línea sobre una copia del almacenamiento. Elige un PIN que no uses en otros servicios, conserva el dispositivo protegido y no borres los datos del navegador: al olvidar el PIN no hay recuperación. La bóveda requiere HTTPS o `localhost` y un navegador con IndexedDB y Web Crypto.
+
+## Contactos locales
+
+Contactos mantiene una agenda separada de los contactos del teléfono. Los datos, el historial, recordatorios, fotos y audios se guardan en IndexedDB (`AgendaContactosLocal`); la información personal y los archivos quedan cifrados localmente con AES-GCM mediante Web Crypto. No se agregan a SQLite, a la sincronización de Agenda ni a ningún endpoint. La clave no se exporta; un respaldo JSON contiene los datos descifrados y archivos adjuntos para que se pueda restaurar, por lo que debe protegerse como información sensible. La restauración agrega los contactos no duplicados y no reemplaza los existentes.
+
+Los recordatorios y cumpleaños aparecen en calendario y Próximas, pero permanecen locales. Las notificaciones del navegador requieren que el usuario active permiso y que Agenda esté abierta; GitHub Pages no envía notificaciones cuando la app está cerrada. Llamar, correo y WhatsApp solo abren la aplicación elegida por el usuario. Las grabaciones se asocian únicamente al importar un archivo de audio que el usuario ya obtuvo con autorización; la app no graba ni intercepta llamadas.
 
 ## Despliegue en Railway
 
