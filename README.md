@@ -10,6 +10,7 @@ Agenda instalable en español con calendario perpetuo, actividades, diario, noti
 - Acceso mediante passkeys/WebAuthn y sincronización entre dispositivos con sesión autenticada.
 - PWA instalable en Android y iPhone. El calendario y los datos locales funcionan sin conexión; la sincronización requiere internet.
 - Galería local: muestra solo los archivos o carpetas seleccionados; no sube fotos o videos.
+- Finanzas personales: movimientos de ingresos y gastos, deudas y abonos, objetivos de ahorro, presupuestos, resumen, calendario y reportes con exportación CSV e impresión.
 
 ## Passkeys, privacidad y sincronización
 
@@ -22,6 +23,12 @@ GitHub Pages por sí solo no puede validar passkeys. El backend y la app se sirv
 ## Fotos, videos y almacenamiento
 
 La galería no sube ni guarda medios, por lo que la agenda no consume espacio de nube para fotos. La app no puede consultar el espacio libre del teléfono ni recorrer automáticamente la SD; el selector del sistema solo entrega los archivos o la carpeta que el usuario elige.
+
+## Finanzas personales
+
+Las finanzas se guardan en una base IndexedDB independiente (`AgendaFinanzasLocal`) en el mismo dispositivo y origen. No se añaden a la base SQLite de Agenda ni al endpoint de sincronización; por tanto, no se envían al servicio de sincronización existente. Para moverlas entre dispositivos, usa **Respaldar finanzas JSON** desde Reportes y restaura ese archivo en el otro dispositivo. La restauración reemplaza los datos financieros locales actuales, después de pedir confirmación. Protege el archivo de respaldo como información sensible.
+
+El balance mensual resta a los ingresos los gastos registrados y los abonos que no tengan un gasto vinculado. El disponible resta los gastos que no están vinculados a un abono, todos los abonos y las aportaciones a ahorro; si registras el abono junto a un gasto, se contabiliza una sola vez. Si detecta un gasto existente con la misma fecha e importe al capturar el abono, permite vincularlos. Los retiros solo actualizan el saldo del objetivo de ahorro. Los movimientos pendientes aparecen identificados, y el resumen usa los registros del mes seleccionado.
 
 ## Despliegue en Railway
 

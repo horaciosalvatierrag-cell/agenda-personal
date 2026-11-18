@@ -1,7 +1,7 @@
 name: Publicar agenda en GitHub Pages
 on:
   push:
-    branches: [main]
+    branches: [main, github-pages-deploy]
   workflow_dispatch:
 permissions:
   contents: read
