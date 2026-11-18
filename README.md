@@ -72,3 +72,13 @@ Abre `http://localhost:3000`. WebAuthn admite `localhost` como origen seguro de 
 Repositorio: <https://github.com/horaciosalvatierrag-cell/agenda-personal>
 
 `schema.sql` describe las tablas locales `activities`, `completions` y `daily_notes`. `sql.js` mantiene la copia SQLite del navegador. El backend sincroniza esa copia como un archivo SQLite validado por la app antes de cargarlo.
+
+### Diario de voz y privacidad
+
+El Diario conserva sus notas escritas en SQLite local. Para mantenerlas en el dispositivo, las nuevas copias de sincronización excluyen `daily_notes`; al recibir una copia se preservan las notas ya existentes localmente. La sincronización previa pudo haber incluido notas escritas: este cambio no puede retirar copias históricas que ya conserve el servidor.
+
+Las grabaciones, transcripciones, etiquetas y observaciones se almacenan en una base IndexedDB independiente (`AgendaDiaryVoiceLocal`). Los datos quedan en el perfil local del navegador y no están cifrados en reposo. No se incorporan a la sincronización ni se transmiten. El botón **Exportar respaldo del Diario** crea un JSON local que incluye las notas escritas y las entradas de voz con sus audios; el usuario debe guardar ese archivo en un lugar privado. La restauración agrega registros sin reemplazar notas escritas existentes.
+
+La grabación usa `getUserMedia` y `MediaRecorder`; solo comienza después de pulsar **Grabar nota de voz**, solicita permiso del micrófono y requiere HTTPS o localhost. La transcripción usa exclusivamente `SpeechRecognition` cuando el navegador permite activar `processLocally`. El navegador puede requerir que el usuario prepare explícitamente paquetes de idioma desde **Preparar idiomas locales**; esa acción puede descargar paquetes del navegador, pero el audio de la grabación se procesa en el dispositivo. Si no se confirma el modo local, no se intenta transcripción remota. En ese caso el audio aún se puede escuchar, guardar y transcribir manualmente.
+
+La detección automática es de mejor esfuerzo: compara reconocimiento local en español de México e inglés estadounidense, y conserva el resultado más confiable; puede fallar con habla mezclada, ruido o frases cortas. Inglés británico está disponible como selección explícita si el navegador ofrece el paquete. No se traduce el texto. La disponibilidad de grabación, dictado, paquetes locales y entrada de pista de audio depende del navegador y puede variar en iOS y Android.

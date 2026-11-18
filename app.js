@@ -35,6 +35,7 @@
       CREATE TABLE IF NOT EXISTS completions(activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,occurrence_date TEXT NOT NULL,completed INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(activity_id,occurrence_date));
       CREATE TABLE IF NOT EXISTS daily_notes(date TEXT PRIMARY KEY,content TEXT NOT NULL DEFAULT '',important INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
       CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(date);`);
+    window.AgendaDiaryLocal={getNotes:()=>rows('SELECT date,content,important,updated_at FROM daily_notes ORDER BY date'),mergeNotes:notes=>new Promise(resolve=>{for(const note of notes||[]){if(!/^\d{4}-\d{2}-\d{2}$/.test(note.date||'')||typeof note.content!=='string')continue;sql('INSERT OR IGNORE INTO daily_notes(date,content,important,updated_at) VALUES(?,?,?,?)',[note.date,note.content,Number(!!note.important),note.updated_at||new Date().toISOString()]);}persist(resolve,{skipSync:true});renderDiary();})};
     $('#dbStatus').textContent='Base de datos local SQLite';
     $('#todayLabel').textContent=new Intl.DateTimeFormat('es-MX',{weekday:'long',day:'numeric',month:'long'}).format(new Date());
     render(); setInterval(checkReminders,30000); checkReminders();
@@ -52,18 +53,21 @@
     if(typeof base64!=='string'||base64.length>Math.ceil(8*1024*1024*4/3))throw new Error('La copia en la nube excede el límite de 8 MB.');
     const raw=atob(base64),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
     if(new TextDecoder().decode(bytes.subarray(0,16))!=='SQLite format 3\u0000')throw new Error('La copia en la nube no es un archivo SQLite válido.');
+    const localDiaryNotes=rows('SELECT date,content,important,updated_at FROM daily_notes');
     const fresh=new SQL.Database(bytes);
     const unsafe=rowsFrom(fresh,"SELECT name FROM sqlite_master WHERE type IN ('trigger','view') OR (type='table' AND sql LIKE 'CREATE VIRTUAL TABLE%') LIMIT 1");
     const columns=rowsFrom(fresh,'PRAGMA table_info(activities)')||[];
     if(unsafe?.length||!columns.some(c=>c[1]==='id')||!columns.some(c=>c[1]==='title')||!columns.some(c=>c[1]==='date')){fresh.close();throw new Error('La copia en la nube no tiene el esquema esperado.');}
     fresh.run("PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS completions(activity_id INTEGER NOT NULL,occurrence_date TEXT NOT NULL,completed INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(activity_id,occurrence_date)); CREATE TABLE IF NOT EXISTS daily_notes(date TEXT PRIMARY KEY,content TEXT NOT NULL DEFAULT '',important INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(date);");
+    for(const note of localDiaryNotes){const st=fresh.prepare('INSERT OR IGNORE INTO daily_notes(date,content,important,updated_at) VALUES(?,?,?,?)');st.run([note.date,note.content,note.important,note.updated_at]);st.free();}
     db.close();db=fresh;persist(null,{skipSync:true});render();
   }
+  function exportSyncSnapshot(){const copy=new SQL.Database(db.export());try{copy.run('DELETE FROM daily_notes');return copy.export();}finally{copy.close();}}
   async function uploadCurrentSnapshot(userId,baseRevision=null){
     if(!window.AgendaAuth?.account||window.AgendaAuth.account.userId!==userId)return;
     const versionAtStart=localMutationVersion;
     const revision=baseRevision??Number(localStorage.getItem(revisionKey(userId))||0);
-    const response=await window.AgendaAuth.api('/api/sync',{method:'PUT',body:JSON.stringify({baseRevision:revision,snapshot:binaryBase64(db.export())})});
+    const response=await window.AgendaAuth.api('/api/sync',{method:'PUT',body:JSON.stringify({baseRevision:revision,snapshot:binaryBase64(exportSyncSnapshot())})});
     localStorage.setItem(revisionKey(userId),String(response.revision));if(versionAtStart===localMutationVersion)localStorage.removeItem(dirtyKey(userId));
     $('#dbStatus').textContent='Agenda sincronizada';
   }
