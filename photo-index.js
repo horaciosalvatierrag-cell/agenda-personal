@@ -46,9 +46,10 @@
     });
   }
 
-  async function getPhotos(folderId) {
+  async function getPhotos(folderId = '') {
     const db = await open();
-    return requestValue(db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).index('by-folder').getAll(folderId));
+    const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
+    return requestValue(folderId ? store.index('by-folder').getAll(folderId) : store.getAll());
   }
 
   async function getThumbnail(folderId, path, signature, { allowStale = false } = {}) {
@@ -107,11 +108,12 @@
     return { persisted, usage: estimate?.usage ?? null, quota: estimate?.quota ?? null };
   }
 
-  async function diagnostics(folderId) {
+  async function diagnostics(folderId = '') {
     const db = await open();
-    const photos = await requestValue(db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).index('by-folder').getAll(folderId));
+    const photosStore = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
+    const photos = await requestValue(folderId ? photosStore.index('by-folder').getAll(folderId) : photosStore.getAll());
     const thumbs = await requestValue(db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE).getAll());
-    const folderThumbs = thumbs.filter(row => row.folderId === folderId);
+    const folderThumbs = folderId ? thumbs.filter(row => row.folderId === folderId) : thumbs;
     return {
       indexedPhotos: photos.length,
       cachedThumbnails: folderThumbs.length,
