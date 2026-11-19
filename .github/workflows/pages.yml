@@ -4,6 +4,7 @@ on:
     branches: [main, github-pages-deploy]
   workflow_dispatch:
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -23,6 +24,20 @@ jobs:
         with:
           path: .
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Wait for GitHub Pages artifact visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_ARTIFACT: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          for attempt in {1..15}; do
+            visible=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" --jq '.artifacts[].name' 2>/dev/null | grep -Fx "$EXPECTED_ARTIFACT" || true)
+            if [ "$visible" = "$EXPECTED_ARTIFACT" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "GitHub Actions todavía no muestra el artefacto $EXPECTED_ARTIFACT" >&2
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
         with:
