@@ -37,6 +37,9 @@ html[data-theme="dark"] .vault-status.error,html[data-theme="dark"] .finance-neg
 html[data-theme="dark"] .finance-delete:hover{background:#3b2424}
 html[data-theme="dark"] .finance-progress,html[data-theme="dark"] .finance-progress::-webkit-progress-bar,html[data-theme="dark"] .finance-category-progress::-webkit-progress-bar{background:#343d46}
 html[data-theme="dark"] .media-viewer{background:#080b0e}
+html[data-theme="dark"] .folder-thumb[data-thumbnail-state="broken"]{border-color:#b65a5a;background:#362526}
+html[data-theme="dark"] .folder-thumb[data-thumbnail-state="broken"] span,html[data-theme="dark"] .folder-thumb[data-thumbnail-state="missing"] span{color:#ffaaa5}
+html[data-theme="dark"] .folder-thumb[data-thumbnail-state="pending"] span{color:#a8b4be}
 html[data-theme="dark"] dialog{color:var(--ink);border-color:var(--line);background:var(--paper)}
 html[data-theme="dark"] dialog::backdrop{background:#0009}
 html[data-theme="dark"] .voice-recording-indicator{color:#ffaaa5}

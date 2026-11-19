@@ -110,6 +110,23 @@
     return row && (allowStale || row.signature === signature) ? row : null;
   }
 
+  async function getThumbnailKeys() {
+    const db = await open();
+    const store = db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE);
+    return new Promise((resolve, reject) => {
+      const keys = [];
+      const request = store.openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { resolve(keys); return; }
+        const row = cursor.value;
+        if (row?.folderId && typeof row.path === 'string') keys.push({ folderId: row.folderId, path: row.path });
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   function saveBatch(folderId, rows) {
     if (!rows.length) return Promise.resolve();
     return transaction([PHOTO_STORE], 'readwrite', tx => {
@@ -189,13 +206,16 @@
     const thumbnailStore = db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE);
     const thumbs = await new Promise((resolve, reject) => {
       const request = thumbnailStore.openCursor();
-      const result = { count: 0, bytes: 0 };
+      const result = { count: 0, bytes: 0, invalid: 0 };
       request.onsuccess = () => {
         const cursor = request.result;
         if (!cursor) { resolve(result); return; }
         if (!folderId || cursor.value.folderId === folderId) {
-          result.count++;
-          result.bytes += cursor.value.blob?.size || 0;
+          const blob = cursor.value.blob;
+          if (blob instanceof Blob && blob.size > 0 && (!blob.type || blob.type.startsWith('image/'))) {
+            result.count++;
+            result.bytes += blob.size;
+          } else result.invalid++;
         }
         cursor.continue();
       };
@@ -204,6 +224,7 @@
     return {
       indexedPhotos: photos.count,
       cachedThumbnails: thumbs.count,
+      invalidThumbnailRecords: thumbs.invalid,
       unavailableOriginals: photos.unavailable,
       thumbnailBytes: thumbs.bytes,
       storage: await requestPersistence()
@@ -246,5 +267,5 @@
     } finally { bitmap?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
   }
 
-  window.AgendaPhotoIndex = Object.freeze({ open, getPhotoCount, getPhotosPage, getPhotosByFolderPage, getThumbnail, saveBatch, saveThumbnail, reconcile, markUnavailable, requestPersistence, diagnostics, makeThumbnail });
+  window.AgendaPhotoIndex = Object.freeze({ open, getPhotoCount, getPhotosPage, getPhotosByFolderPage, getThumbnail, getThumbnailKeys, saveBatch, saveThumbnail, reconcile, markUnavailable, requestPersistence, diagnostics, makeThumbnail });
 })();
