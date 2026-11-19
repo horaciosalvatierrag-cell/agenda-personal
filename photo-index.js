@@ -46,10 +46,54 @@
     });
   }
 
-  async function getPhotos(folderId = '') {
+  async function getPhotoCount(folderId = '') {
     const db = await open();
     const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
-    return requestValue(folderId ? store.index('by-folder').getAll(folderId) : store.getAll());
+    return requestValue(folderId ? store.index('by-folder').count(folderId) : store.count());
+  }
+
+  async function getPhotosPage(afterKey = null, limit = 1000) {
+    const db = await open();
+    const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
+    return new Promise((resolve, reject) => {
+      const rows = [];
+      const range = afterKey ? IDBKeyRange.lowerBound(afterKey, true) : undefined;
+      const request = store.openCursor(range);
+      let nextKey = null;
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor || rows.length >= limit) {
+          resolve({ rows, nextKey, done: !cursor });
+          return;
+        }
+        rows.push(cursor.value);
+        nextKey = cursor.primaryKey;
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function getPhotosByFolderPage(folderId, afterPath = null, limit = 1000) {
+    const db = await open();
+    const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
+    return new Promise((resolve, reject) => {
+      const rows = [];
+      const lowerKey = afterPath ? [folderId, afterPath] : [folderId, ''];
+      const request = store.openCursor(IDBKeyRange.lowerBound(lowerKey, Boolean(afterPath)));
+      let nextPath = null;
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor || cursor.primaryKey[0] !== folderId || rows.length >= limit) {
+          resolve({ rows, nextPath, done: !cursor || cursor.primaryKey[0] !== folderId });
+          return;
+        }
+        rows.push(cursor.value);
+        nextPath = cursor.primaryKey[1];
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async function getThumbnail(folderId, path, signature, { allowStale = false } = {}) {
@@ -87,8 +131,19 @@
 
   async function markUnavailable(folderId, seenPaths) {
     const db = await open();
-    const oldRows = await requestValue(db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).index('by-folder').getAll(folderId));
-    const missing = oldRows.filter(row => !seenPaths.has(row.path) && row.available !== false);
+    const photos = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
+    const missing = await new Promise((resolve, reject) => {
+      const request = photos.index('by-folder').openCursor(folderId);
+      const rows = [];
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { resolve(rows); return; }
+        const row = cursor.value;
+        if (!seenPaths.has(row.path) && row.available !== false) rows.push(row);
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
     if (!missing.length) return 0;
     await transaction([PHOTO_STORE], 'readwrite', tx => {
       const photos = tx.objectStore(PHOTO_STORE);
@@ -111,14 +166,38 @@
   async function diagnostics(folderId = '') {
     const db = await open();
     const photosStore = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
-    const photos = await requestValue(folderId ? photosStore.index('by-folder').getAll(folderId) : photosStore.getAll());
-    const thumbs = await requestValue(db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE).getAll());
-    const folderThumbs = folderId ? thumbs.filter(row => row.folderId === folderId) : thumbs;
+    const photos = await new Promise((resolve, reject) => {
+      const request = folderId ? photosStore.index('by-folder').openCursor(folderId) : photosStore.openCursor();
+      const result = { count: 0, unavailable: 0 };
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { resolve(result); return; }
+        result.count++;
+        if (cursor.value.available === false) result.unavailable++;
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
+    const thumbnailStore = db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE);
+    const thumbs = await new Promise((resolve, reject) => {
+      const request = thumbnailStore.openCursor();
+      const result = { count: 0, bytes: 0 };
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { resolve(result); return; }
+        if (!folderId || cursor.value.folderId === folderId) {
+          result.count++;
+          result.bytes += cursor.value.blob?.size || 0;
+        }
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
     return {
-      indexedPhotos: photos.length,
-      cachedThumbnails: folderThumbs.length,
-      unavailableOriginals: photos.filter(row => row.available === false).length,
-      thumbnailBytes: folderThumbs.reduce((sum, row) => sum + (row.blob?.size || 0), 0),
+      indexedPhotos: photos.count,
+      cachedThumbnails: thumbs.count,
+      unavailableOriginals: photos.unavailable,
+      thumbnailBytes: thumbs.bytes,
       storage: await requestPersistence()
     };
   }
@@ -159,5 +238,5 @@
     } finally { bitmap?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
   }
 
-  window.AgendaPhotoIndex = Object.freeze({ open, getPhotos, getThumbnail, saveBatch, saveThumbnail, reconcile, markUnavailable, requestPersistence, diagnostics, makeThumbnail });
+  window.AgendaPhotoIndex = Object.freeze({ open, getPhotoCount, getPhotosPage, getPhotosByFolderPage, getThumbnail, saveBatch, saveThumbnail, reconcile, markUnavailable, requestPersistence, diagnostics, makeThumbnail });
 })();
