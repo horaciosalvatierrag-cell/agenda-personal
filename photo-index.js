@@ -51,17 +51,32 @@
     return requestValue(db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).index('by-folder').getAll(folderId));
   }
 
-  async function getThumbnail(folderId, path, signature) {
+  async function getThumbnail(folderId, path, signature, { allowStale = false } = {}) {
     const db = await open();
     const row = await requestValue(db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE).get([folderId, path]));
-    return row?.signature === signature ? row : null;
+    return row && (allowStale || row.signature === signature) ? row : null;
   }
 
   function saveBatch(folderId, rows) {
     if (!rows.length) return Promise.resolve();
     return transaction([PHOTO_STORE], 'readwrite', tx => {
       const store = tx.objectStore(PHOTO_STORE);
-      rows.forEach(row => store.put({ ...row, folderId }));
+      rows.forEach(row => {
+        const request = store.get([folderId, row.path]);
+        request.onsuccess = () => {
+          const previous = request.result || {};
+          store.put({
+            ...previous,
+            ...row,
+            id: row.id || `${folderId}:${row.path}`,
+            folderId,
+            indexedAt: row.indexedAt || previous.indexedAt || Date.now(),
+            checkedAt: Date.now(),
+            available: row.available !== false,
+            availabilityStatus: row.available === false ? 'missing' : 'available'
+          });
+        };
+      });
     });
   }
 
@@ -69,20 +84,41 @@
     return transaction([THUMB_STORE], 'readwrite', tx => tx.objectStore(THUMB_STORE).put(row));
   }
 
-  async function removeChangedThumbnail(folderId, path) {
-    return transaction([THUMB_STORE], 'readwrite', tx => tx.objectStore(THUMB_STORE).delete([folderId, path]));
-  }
-
-  async function reconcile(folderId, seenPaths) {
+  async function markUnavailable(folderId, seenPaths) {
     const db = await open();
     const oldRows = await requestValue(db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).index('by-folder').getAll(folderId));
-    const missing = oldRows.filter(row => !seenPaths.has(row.path));
+    const missing = oldRows.filter(row => !seenPaths.has(row.path) && row.available !== false);
     if (!missing.length) return 0;
-    await transaction([PHOTO_STORE, THUMB_STORE], 'readwrite', tx => {
-      const photos = tx.objectStore(PHOTO_STORE), thumbs = tx.objectStore(THUMB_STORE);
-      missing.forEach(row => { photos.delete([folderId, row.path]); thumbs.delete([folderId, row.path]); });
+    await transaction([PHOTO_STORE], 'readwrite', tx => {
+      const photos = tx.objectStore(PHOTO_STORE);
+      missing.forEach(row => photos.put({ ...row, available: false, availabilityStatus: 'missing', checkedAt: Date.now() }));
     });
     return missing.length;
+  }
+
+  async function reconcile(folderId, seenPaths) { return markUnavailable(folderId, seenPaths); }
+
+  async function requestPersistence() {
+    const storage = navigator.storage;
+    let persisted = false;
+    if (storage?.persisted) persisted = await storage.persisted();
+    if (!persisted && storage?.persist) persisted = await storage.persist();
+    const estimate = storage?.estimate ? await storage.estimate() : null;
+    return { persisted, usage: estimate?.usage ?? null, quota: estimate?.quota ?? null };
+  }
+
+  async function diagnostics(folderId) {
+    const db = await open();
+    const photos = await requestValue(db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).index('by-folder').getAll(folderId));
+    const thumbs = await requestValue(db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE).getAll());
+    const folderThumbs = thumbs.filter(row => row.folderId === folderId);
+    return {
+      indexedPhotos: photos.length,
+      cachedThumbnails: folderThumbs.length,
+      unavailableOriginals: photos.filter(row => row.available === false).length,
+      thumbnailBytes: folderThumbs.reduce((sum, row) => sum + (row.blob?.size || 0), 0),
+      storage: await requestPersistence()
+    };
   }
 
   async function makeThumbnail(file, maxSize = 360) {
@@ -121,5 +157,5 @@
     } finally { bitmap?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
   }
 
-  window.AgendaPhotoIndex = Object.freeze({ open, getPhotos, getThumbnail, saveBatch, saveThumbnail, removeChangedThumbnail, reconcile, makeThumbnail });
+  window.AgendaPhotoIndex = Object.freeze({ open, getPhotos, getThumbnail, saveBatch, saveThumbnail, reconcile, markUnavailable, requestPersistence, diagnostics, makeThumbnail });
 })();
