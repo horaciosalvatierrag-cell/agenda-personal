@@ -82,6 +82,49 @@
     });
   }
 
+  // Fetch a bounded visual window directly from the modification-date index.
+  // The cursor advances inside IndexedDB, so the full catalog is never copied
+  // into the page's JavaScript heap.
+  async function getPhotosRange(offset = 0, limit = 80, anchor = null) {
+    const db = await open();
+    const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
+    const skip = Math.max(0, Math.floor(Number(offset) || 0));
+    const size = Math.max(1, Math.min(1000, Math.floor(Number(limit) || 80)));
+    return new Promise((resolve, reject) => {
+      const rows = [];
+      const index = store.index('by-modified');
+      const validAnchor = anchor && Number.isInteger(anchor.offset) && anchor.offset < skip && anchor.key;
+      const range = validAnchor ? IDBKeyRange.upperBound(anchor.key, true) : undefined;
+      const toSkip = validAnchor ? Math.max(0, skip - anchor.offset - 1) : skip;
+      const request = index.openCursor(range, 'prev');
+      let advanced = false;
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { rows.cursorKey = null; resolve(rows); return; }
+        if (!advanced && toSkip) { advanced = true; cursor.advance(toSkip); return; }
+        advanced = true;
+        rows.push(cursor.value);
+        if (rows.length >= size) { rows.cursorKey = cursor.key; resolve(rows); return; }
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function getPhotoAt(offset) {
+    const rows = await getPhotosRange(offset, 1);
+    return rows[0] || null;
+  }
+
+  async function findPhotoIndex(folderId, path) {
+    const db = await open();
+    const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
+    const row = await requestValue(store.get([folderId, path]));
+    if (!row) return -1;
+    const key = [Number(row.lastModified) || 0, folderId, path];
+    return requestValue(store.index('by-modified').count(IDBKeyRange.lowerBound(key, true)));
+  }
+
   async function getPhotosByFolderPage(folderId, afterPath = null, limit = 1000) {
     const db = await open();
     const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
@@ -131,13 +174,16 @@
   }
 
   function saveBatch(folderId, rows) {
-    if (!rows.length) return Promise.resolve();
+    if (!rows.length) return Promise.resolve({ added: 0, modified: 0 });
+    let added = 0, modified = 0;
     return transaction([PHOTO_STORE], 'readwrite', tx => {
       const store = tx.objectStore(PHOTO_STORE);
       rows.forEach(row => {
         const request = store.get([folderId, row.path]);
         request.onsuccess = () => {
           const previous = request.result || {};
+          if (!previous.path) added++;
+          else if (previous.signature !== row.signature || previous.lastModified !== row.lastModified || previous.size !== row.size) modified++;
           store.put({
             ...previous,
             ...row,
@@ -150,11 +196,24 @@
           });
         };
       });
-    });
+      return { get added() { return added; }, get modified() { return modified; } };
+    }).then(() => ({ added, modified }));
   }
 
   function saveThumbnail(row) {
     return transaction([THUMB_STORE], 'readwrite', tx => tx.objectStore(THUMB_STORE).put(row));
+  }
+
+  function saveThumbnailBatch(rows) {
+    if (!rows.length) return Promise.resolve();
+    return transaction([PHOTO_STORE, THUMB_STORE], 'readwrite', tx => {
+      const photos = tx.objectStore(PHOTO_STORE), thumbs = tx.objectStore(THUMB_STORE);
+      for (const row of rows) {
+        thumbs.put({ folderId: row.folderId, path: row.path, signature: row.signature, blob: row.blob, width: row.width, height: row.height, updatedAt: row.updatedAt || Date.now() });
+        const request = photos.get([row.folderId, row.path]);
+        request.onsuccess = () => { if (request.result) photos.put({ ...request.result, thumbnailId: row.path, thumbnailStatus: 'ready', width: row.width, height: row.height }); };
+      }
+    });
   }
 
   async function markUnavailable(folderId, seenPaths) {
@@ -285,5 +344,5 @@
     } finally { bitmap?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
   }
 
-  window.AgendaPhotoIndex = Object.freeze({ open, getPhotoCount, getPhotosPage, getPhotosByFolderPage, getThumbnail, getThumbnailKeysPage, saveBatch, saveThumbnail, reconcile, markUnavailable, markUnavailableNotInScan, requestPersistence, diagnostics, makeThumbnail });
+  window.AgendaPhotoIndex = Object.freeze({ open, getPhotoCount, getPhotosPage, getPhotosRange, getPhotoAt, findPhotoIndex, getPhotosByFolderPage, getThumbnail, getThumbnailKeysPage, saveBatch, saveThumbnail, saveThumbnailBatch, reconcile, markUnavailable, markUnavailableNotInScan, requestPersistence, diagnostics, makeThumbnail });
 })();
