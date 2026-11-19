@@ -2,7 +2,7 @@
   'use strict';
 
   const DB_NAME = 'AgendaPhotoFolder';
-  const DB_VERSION = 2;
+  const DB_VERSION = 3;
   const HANDLE_STORE = 'handles';
   const PHOTO_STORE = 'photo-index';
   const THUMB_STORE = 'photo-thumbnails';
@@ -19,6 +19,14 @@
           ? request.transaction.objectStore(PHOTO_STORE)
           : db.createObjectStore(PHOTO_STORE, { keyPath: ['folderId', 'path'] });
         if (!photos.indexNames.contains('by-folder')) photos.createIndex('by-folder', 'folderId', { unique: false });
+        if (!photos.indexNames.contains('by-modified')) photos.createIndex('by-modified', ['lastModified', 'folderId', 'path'], { unique: false });
+        const cursorRequest = photos.openCursor();
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) return;
+          if (typeof cursor.value.lastModified !== 'number' || !Number.isFinite(cursor.value.lastModified)) cursor.update({ ...cursor.value, lastModified: 0 });
+          cursor.continue();
+        };
         if (!db.objectStoreNames.contains(THUMB_STORE)) db.createObjectStore(THUMB_STORE, { keyPath: ['folderId', 'path'] });
       };
       request.onsuccess = () => { request.result.onversionchange = () => request.result.close(); resolve(request.result); };
@@ -57,8 +65,8 @@
     const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
     return new Promise((resolve, reject) => {
       const rows = [];
-      const range = afterKey ? IDBKeyRange.lowerBound(afterKey, true) : undefined;
-      const request = store.openCursor(range);
+      const range = afterKey ? IDBKeyRange.upperBound(afterKey, true) : undefined;
+      const request = store.index('by-modified').openCursor(range, 'prev');
       let nextKey = null;
       request.onsuccess = () => {
         const cursor = request.result;
@@ -67,7 +75,7 @@
           return;
         }
         rows.push(cursor.value);
-        nextKey = cursor.primaryKey;
+        nextKey = cursor.key;
         cursor.continue();
       };
       request.onerror = () => reject(request.error);
