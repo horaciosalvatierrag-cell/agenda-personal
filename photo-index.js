@@ -110,17 +110,20 @@
     return row && (allowStale || row.signature === signature) ? row : null;
   }
 
-  async function getThumbnailKeys() {
+  async function getThumbnailKeysPage(afterKey = null, limit = 1000) {
     const db = await open();
     const store = db.transaction(THUMB_STORE, 'readonly').objectStore(THUMB_STORE);
     return new Promise((resolve, reject) => {
       const keys = [];
-      const request = store.openCursor();
+      const range = afterKey ? IDBKeyRange.lowerBound(afterKey, true) : undefined;
+      const request = store.openCursor(range);
+      let nextKey = null;
       request.onsuccess = () => {
         const cursor = request.result;
-        if (!cursor) { resolve(keys); return; }
+        if (!cursor || keys.length >= limit) { resolve({ keys, nextKey, done: !cursor }); return; }
         const row = cursor.value;
         if (row?.folderId && typeof row.path === 'string') keys.push({ folderId: row.folderId, path: row.path });
+        nextKey = cursor.primaryKey;
         cursor.continue();
       };
       request.onerror = () => reject(request.error);
@@ -175,6 +178,21 @@
       missing.forEach(row => photos.put({ ...row, available: false, availabilityStatus: 'missing', checkedAt: Date.now() }));
     });
     return missing.length;
+  }
+
+  async function markUnavailableNotInScan(folderId, scanId) {
+    let afterPath = null, count = 0;
+    while (true) {
+      const page = await getPhotosByFolderPage(folderId, afterPath, 1000);
+      const missing = page.rows.filter(row => row.lastSeenScanId !== scanId && row.available !== false);
+      if (missing.length) {
+        await saveBatch(folderId, missing.map(row => ({ ...row, available: false, availabilityStatus: 'missing', checkedAt: Date.now() })));
+        count += missing.length;
+      }
+      if (page.done || !page.rows.length) break;
+      afterPath = page.nextPath;
+    }
+    return count;
   }
 
   async function reconcile(folderId, seenPaths) { return markUnavailable(folderId, seenPaths); }
@@ -267,5 +285,5 @@
     } finally { bitmap?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
   }
 
-  window.AgendaPhotoIndex = Object.freeze({ open, getPhotoCount, getPhotosPage, getPhotosByFolderPage, getThumbnail, getThumbnailKeys, saveBatch, saveThumbnail, reconcile, markUnavailable, requestPersistence, diagnostics, makeThumbnail });
+  window.AgendaPhotoIndex = Object.freeze({ open, getPhotoCount, getPhotosPage, getPhotosByFolderPage, getThumbnail, getThumbnailKeysPage, saveBatch, saveThumbnail, reconcile, markUnavailable, markUnavailableNotInScan, requestPersistence, diagnostics, makeThumbnail });
 })();

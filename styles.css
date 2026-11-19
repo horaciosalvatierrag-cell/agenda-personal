@@ -297,6 +297,7 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .folder-gallery-heading { display: flex; align-items: center; justify-content: space-between; color: #46515a; font-size: 11px; }
 .folder-gallery-heading span { color: #7b8790; font-size: 9px; }
 .folder-gallery-track { display: flex; gap: 9px; overflow-x: auto; overflow-y: hidden; padding: 2px 1px 7px; scroll-behavior: smooth; scroll-snap-type: x proximity; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; cursor: grab; }
+.photo-virtual-spacer { flex: 0 0 auto; height: 1px; pointer-events: none; }
 .folder-gallery-track.is-dragging { cursor: grabbing; scroll-behavior: auto; user-select: none; }
 .folder-thumb { display: grid; flex: 0 0 126px; gap: 5px; width: 126px; overflow: hidden; padding: 4px; border: 1px solid #e2e7eb; border-radius: 7px; color: #46515a; background: #fff; text-align: left; cursor: pointer; scroll-snap-align: start; }
 .folder-thumb:hover { border-color: #9ecbed; background: #f7fbfe; }
