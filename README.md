@@ -1,6 +1,6 @@
 # Agenda personal
 
-Agenda instalable en español con calendario perpetuo, actividades, diario, notificaciones mientras la app está abierta y visor local de fotos y videos.
+Agenda instalable en español con calendario perpetuo, actividades, diario, notificaciones mientras la app está abierta y una galería local de fotos.
 
 ## Funciones
 
@@ -9,7 +9,7 @@ Agenda instalable en español con calendario perpetuo, actividades, diario, noti
 - SQLite local en IndexedDB, con exportación e importación de respaldos.
 - Acceso mediante passkeys/WebAuthn y sincronización entre dispositivos con sesión autenticada.
 - PWA instalable en Android y iPhone. El calendario y los datos locales funcionan sin conexión; la sincronización requiere internet.
-- Galería local: muestra solo los archivos o carpetas seleccionados; no sube fotos o videos.
+- Galería local: incorpora fotografías seleccionadas manualmente, conserva sus originales y miniaturas en el dispositivo y no sube fotos a Internet.
 - Finanzas personales: movimientos de ingresos y gastos, deudas y abonos, objetivos de ahorro, presupuestos, resumen, calendario y reportes con exportación CSV e impresión.
 - Contactos privados: datos y archivos cifrados localmente, historial, recordatorios, importación CSV/vCard y respaldo JSON; independientes de la agenda nativa y de la sincronización.
 
@@ -21,11 +21,13 @@ El navegador crea y firma los retos; el backend valida las firmas, el origen, el
 
 GitHub Pages por sí solo no puede validar passkeys. El backend y la app se sirven desde el mismo dominio de Railway porque WebAuthn requiere que el sitio y su RP ID coincidan. GitHub conserva el código y activa el despliegue de Pages; la URL de Railway es la dirección para usar passkeys y sincronización.
 
-## Fotos, videos y almacenamiento
+## Fotos y almacenamiento local
 
-La galería no sube ni guarda las fotos en la base de datos de la Agenda. En navegadores compatibles con File System Access API, **Elegir carpeta** conserva en IndexedDB el identificador local de la carpeta. En visitas posteriores intenta reabrirla automáticamente cuando el navegador mantenga el permiso; si este vuelve a `prompt`, se solicita permiso al pulsar el mismo botón, sin volver a elegir la carpeta. El permiso puede ser revocado desde el navegador.
+**Elegir fotos** es la única forma de añadir imágenes. La galería no selecciona carpetas, no recorre tarjetas SD y no explora archivos que el usuario no elija. Cada archivo se identifica mediante SHA-256; el mismo contenido se omite aunque tenga otro nombre. Se conservan los originales sin recomprimir y se crea una miniatura separada para la cuadrícula.
 
-Las imágenes de subcarpetas se recorren de forma recursiva. Las miniaturas se generan bajo demanda y la vista principal lee en resolución original solo la fotografía seleccionada. Las URL temporales se liberan al cambiar de imagen o salir de la página. En navegadores sin `showDirectoryPicker()` se conserva el selector de carpeta `webkitdirectory`; sus archivos son temporales y el navegador no puede recordar la carpeta. HEIC/HEIF solo se muestra si el navegador puede decodificarlo. Ningún archivo se transmite a servicios externos.
+La biblioteca nueva usa IndexedDB (`AgendaSelectedPhotoLibrary`) para guardar el catálogo, los originales y las miniaturas de forma local y persistente. Se muestran 60 fotografías por página, ordenadas por fecha de modificación descendente; el visor usa el original almacenado cuando el navegador puede mostrarlo. Las URL blob son temporales y se liberan al cambiar de página o cerrar el visor. Se consulta el espacio disponible y se solicita persistencia al navegador cuando está disponible; la cuota sigue dependiendo del navegador y del espacio del dispositivo.
+
+El índice anterior de carpetas (`AgendaPhotoFolder`) se conserva intacto como respaldo, pero ya no se usa para mostrar la nueva biblioteca. La nueva galería empieza vacía y se construye únicamente con las fotografías que selecciones. El archivo que estaba procesándose queda en una cola local y se intenta completar al volver a abrir la galería; si la app se cerró antes de procesar el resto de la selección, vuelve a elegir esos archivos y los ya incorporados se omitirán como duplicados.
 
 ## Finanzas personales
 
