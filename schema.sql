@@ -4,8 +4,11 @@ CREATE TABLE IF NOT EXISTS activities (
   title TEXT NOT NULL CHECK(length(title) BETWEEN 1 AND 100),
   date TEXT NOT NULL,
   time TEXT NOT NULL DEFAULT '09:00',
+  end_time TEXT NOT NULL DEFAULT '',
+  end_next_day INTEGER NOT NULL DEFAULT 0,
   category TEXT NOT NULL DEFAULT 'Personal',
   repeat_rule TEXT NOT NULL DEFAULT 'none' CHECK(repeat_rule IN ('none','daily','weekly','monthly','yearly')),
+  repeat_until TEXT NOT NULL DEFAULT '',
   notes TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -15,6 +18,11 @@ CREATE TABLE IF NOT EXISTS completions (
   completed INTEGER NOT NULL DEFAULT 1,
   PRIMARY KEY(activity_id, occurrence_date)
 );
+CREATE TABLE IF NOT EXISTS occurrence_exceptions (
+  activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+  occurrence_date TEXT NOT NULL,
+  PRIMARY KEY(activity_id, occurrence_date)
+);
 CREATE TABLE IF NOT EXISTS daily_notes (
   date TEXT PRIMARY KEY,
   content TEXT NOT NULL DEFAULT '',
@@ -22,3 +30,4 @@ CREATE TABLE IF NOT EXISTS daily_notes (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(date);
+
