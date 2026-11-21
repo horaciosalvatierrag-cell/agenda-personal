@@ -4,7 +4,7 @@ Agenda instalable en español con calendario perpetuo, actividades, diario, noti
 
 ## Funciones
 
-- Calendario mensual navegable sin límite de año, actividades recurrentes y marcas de completado.
+- Calendario mensual navegable sin límite de año, actividades con hora de inicio y fin, recurrencias con fecha límite, finalización automática de cada ocurrencia y borrado controlado de ocurrencias o series.
 - Diario por fecha con guardado automático y botón **Guardar nota**.
 - SQLite local en IndexedDB, con exportación e importación de respaldos.
 - Acceso mediante passkeys/WebAuthn y sincronización entre dispositivos con sesión autenticada.
@@ -50,3 +50,4 @@ Abre `http://localhost:3000`. WebAuthn admite `localhost` como origen seguro de 
 Repositorio: <https://github.com/horaciosalvatierrag-cell/agenda-personal>
 
 `schema.sql` describe las tablas locales `activities`, `completions` y `daily_notes`. `sql.js` mantiene la copia SQLite del navegador. El backend sincroniza esa copia como un archivo SQLite validado por la app antes de cargarlo.
+
