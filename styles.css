@@ -161,6 +161,7 @@ button { color: inherit; }
 .day-cell.selected:not(.today) { background: #f1f8fd; }
 .day-cell.selected:not(.today) .day-number { outline: 1px solid #80b9e4; color: var(--blue-dark); }
 .event-pill { overflow: hidden; margin-top: 3px; padding: 3px 5px; border-radius: 4px; color: #075b96; background: #e8f3fc; font-size: 9px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.activity-event-pill { display: block; width: 100%; border: 0; text-align: left; cursor: pointer; }
 .event-pill.work { color: #5149a1; background: var(--purple-soft); }
 .event-pill.health { color: #a43d0a; background: var(--orange-soft); }
 .event-pill.home { color: #745b00; background: var(--amber-soft); }
@@ -175,8 +176,8 @@ button { color: inherit; }
 .small-add { padding: 8px 10px; border: 1px solid #cfe4f4; border-radius: 6px; color: var(--blue-dark); background: #f4faff; font-size: 10px; font-weight: 600; cursor: pointer; }
 .small-add:hover { background: var(--blue-soft); }
 .day-list { margin-top: 13px; }
-.day-entry { display: grid; grid-template-columns: 48px 3px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #eef0f2; }
-.day-time { color: #69757e; font-size: 10px; }
+.day-entry { display: grid; grid-template-columns: minmax(74px,auto) 3px minmax(0,1fr) auto auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #eef0f2; }
+.day-time { color: #69757e; font-size: 10px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .day-bar { height: 28px; border-radius: 4px; background: var(--blue); }
 .day-bar.work { background: var(--purple); }
 .day-bar.health { background: #ed7d31; }
@@ -187,6 +188,8 @@ button { color: inherit; }
 .done-toggle { width: 19px; height: 19px; border: 1px solid #c7cfd5; border-radius: 50%; color: white; background: white; cursor: pointer; }
 .done-toggle:hover { border-color: var(--blue); background: #f4faff; }
 .done-toggle.done { border-color: var(--green); background: var(--green); }
+.day-edit { padding: 4px; border: 0; color: #66747e; background: transparent; cursor: pointer; font-size: 14px; }
+.day-edit:hover { color: var(--blue); }
 .empty { padding: 21px 5px; color: #78838b; text-align: center; font-size: 11px; line-height: 1.6; }
 .insight-panel { border-color: #dbeaf5; background: linear-gradient(145deg, #eff7fd, #f8fbfe 70%); }
 .insight-panel h2 { margin-top: 12px; font-size: 17px; }
@@ -228,6 +231,10 @@ label { display: block; margin: 13px 0; color: #4e5c66; font-size: 10px; font-we
 label input, label select, label textarea { display: block; width: 100%; margin-top: 7px; padding: 10px 11px; border: 1px solid #d7dde2; border-radius: 6px; outline: none; color: #25313a; background: white; font-size: 12px; }
 label input:focus, label select:focus, label textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 2px #0078d422; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.overnight-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 13px 0; }
+.overnight-toggle input { display: inline-block; width: 17px; height: 17px; margin: 0; padding: 0; border: 0; accent-color: var(--blue); }
+.form-error { margin-top: -5px; color: #a4262c; font-size: 10px; line-height: 1.45; }
+.occurrence-notice { margin: -5px 0 10px; color: #64727b; font-size: 10px; line-height: 1.45; }
 .modal-actions { display: flex; align-items: center; gap: 8px; margin-top: 20px; }
 .modal-actions > span { flex: 1; }
 .save-btn, .cancel-btn, .delete-btn { padding: 10px 13px; border: 0; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; }
@@ -236,6 +243,12 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .cancel-btn { color: #45535e; background: #f0f2f4; }
 .cancel-btn:hover { background: #e6eaed; }
 .delete-btn { color: #a4262c; background: #fdebec; }
+.delete-activity-dialog { width: min(430px,calc(100% - 28px)); }
+.delete-activity-content { padding: 24px; }
+.delete-activity-content p { margin: -7px 0 16px; color: #687580; font-size: 11px; line-height: 1.5; }
+.delete-activity-options { display: grid; gap: 8px; }
+.delete-option { width: 100%; padding: 11px 12px; border: 1px solid #ead5d6; border-radius: 7px; color: #8e252a; background: #fff9f9; font-size: 11px; font-weight: 600; text-align: left; cursor: pointer; }
+.delete-option:hover { border-color: #c8696e; background: #fdebec; }
 .hidden { display: none !important; }
 
 /* Diario personal */
