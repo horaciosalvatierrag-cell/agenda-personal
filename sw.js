@@ -1,4 +1,4 @@
-const CACHE='agenda-personal-v34';
+const CACHE='agenda-personal-v35';
 const ASSETS=['./','./index.html','./styles.css','./finance.css','./vault.css','./contacts.css','./i18n.js','./photo-library.js','./app.js','./finance.js','./vault.js','./contacts.js','./auth.js','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png','./vendor/sql-wasm.js','./vendor/sql-wasm.wasm'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

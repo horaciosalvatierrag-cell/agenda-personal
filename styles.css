@@ -303,8 +303,8 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .media-page-ellipsis { padding: 0 2px; color: var(--muted); font-size: 12px; }
 .media-empty { grid-column: 1 / -1; margin: 0; padding: 26px 12px; color: var(--muted); font-size: 11px; text-align: center; }
 .media-viewer { position: fixed; inset: 0; z-index: 1100; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,min(90vw,calc(80vh * .8))) minmax(0,1fr); grid-template-rows: minmax(0,1fr) auto; align-items: center; justify-items: center; gap: 12px; padding: clamp(16px,3vh,32px); overflow: auto; background: #080d13ef; backdrop-filter: blur(8px); }
-.media-viewer-stage { grid-column: 2; grid-row: 1; display: grid; place-items: center; width: min(90vw,calc(80vh * .8)); height: min(80vh,calc(90vw * 1.25)); aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid #ffffff2c; border-radius: 12px; background: #151a20; box-shadow: 0 20px 70px #0008; touch-action: pan-y; }
-.media-viewer-stage img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; color: white; }
+.media-viewer-stage { grid-column: 2; grid-row: 1; display: grid; place-items: center; width: min(90vw,calc(80vh * .8)); height: min(80vh,calc(90vw * 1.25)); aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid #ffffff2c; border-radius: 12px; background: #151a20; box-shadow: 0 20px 70px #0008; touch-action: none; }
+.media-viewer-stage img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; color: white; transform-origin: center center; will-change: transform; }
 .media-viewer-close, .media-viewer-nav { position: fixed; z-index: 1; display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: var(--paper); box-shadow: 0 4px 18px #0006; font-size: 28px; line-height: 1; cursor: pointer; }
 .media-viewer-close { top: max(14px,env(safe-area-inset-top)); right: max(14px,env(safe-area-inset-right)); font-size: 30px; }
 .media-viewer-nav { top: 50%; transform: translateY(-50%); }
