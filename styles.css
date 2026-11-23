@@ -285,6 +285,16 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .media-heading p { max-width: 520px; margin: 6px 0 0; color: #65727b; font-size: 10px; line-height: 1.6; }
 .media-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
 .media-status { padding: 13px 1px; color: #72808a; font-size: 10px; }
+.photo-search { display: grid; gap: 6px; margin: 12px 0 14px; }
+.photo-search > label { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .12em; }
+.photo-search-field { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); }
+.photo-search-field:focus-within { border-color: #9ecbed; box-shadow: 0 0 0 2px #0078d41a; }
+.photo-search-field > svg { flex: 0 0 auto; width: 17px; height: 17px; fill: none; stroke: var(--muted); stroke-linecap: round; stroke-width: 1.8; }
+.photo-search-field input { flex: 1 1 auto; width: 100%; min-width: 0; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; font-size: 11px; }
+.photo-search-field input:focus { border: 0; outline: 0; box-shadow: none; }
+.photo-search-field input::placeholder { color: var(--muted); opacity: .8; }
+.photo-search-field > button { flex: 0 0 auto; width: 28px; height: 28px; border: 0; border-radius: 50%; color: var(--muted); background: transparent; font-size: 21px; line-height: 1; cursor: pointer; }
+.photo-search-field > button:hover { color: var(--ink); background: var(--blue-soft); }
 .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; min-width: 0; overflow: visible; }
 .library-photo-card { display: grid; grid-template-rows: minmax(0,1fr) auto; gap: 6px; min-width: 0; overflow: hidden; padding: 6px; border: 1px solid #e2e7eb; border-radius: 8px; color: var(--ink); background: var(--paper); text-align: left; cursor: pointer; }
 .library-photo-card:hover, .library-photo-card:focus-visible { border-color: #9ecbed; background: #f7fbfe; }
@@ -295,6 +305,9 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
 .library-photo-image img[data-ready="true"] + .library-photo-placeholder { display: none; }
 .library-photo-card.thumbnail-error .library-photo-placeholder { color: #9b3030; }
 .library-photo-caption { display: block; overflow: hidden; color: #3e4c56; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.library-photo-meta { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-width: 0; color: var(--muted); font-size: 8px; line-height: 1.25; }
+.library-photo-meta > time { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.library-photo-meta > span { flex: 0 0 auto; color: var(--blue-dark); }
 .media-pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px; margin-top: 16px; padding: 10px 0 2px; border-top: 1px solid var(--line); }
 .media-page-button { min-width: 32px; min-height: 32px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--paper); font-size: 10px; cursor: pointer; }
 .media-page-button:hover:not(:disabled) { border-color: #9ecbed; background: var(--blue-soft); }
