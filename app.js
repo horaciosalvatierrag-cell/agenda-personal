@@ -162,7 +162,7 @@
   function scheduleDiarySave(){clearTimeout(diaryTimer);$('#diarySaveStatus').textContent='Cambios pendientes…';diaryTimer=setTimeout(()=>{diaryTimer=null;saveDiary();},450);}
   function flushDiary(){if(diaryTimer){clearTimeout(diaryTimer);diaryTimer=null;saveDiary();}}
   function switchDiaryDate(day){flushDiary();selected=day;renderDiary();}
-  let libraryRows=[], photoPage=1, photoPageCount=0, photoTotal=0, photoSelectedIndex=-1, photoViewerUrl='', photoThumbUrls=new Map(), photoLibraryLoaded=false, photoGalleryPromise=null, photoImportMessage='', photoViewerReturnScroll=0, photoPageRequest=0;
+  let libraryRows=[], photoPage=1, photoPageCount=0, photoTotal=0, photoSelectedIndex=-1, photoViewerUrl='', photoThumbUrls=new Map(), photoLibraryLoaded=false, photoGalleryPromise=null, photoImportMessage='', photoViewerReturnScroll=0, photoPageRequest=0, photoDeleteTargetId='', photoDeletePreviewUrl='', photoDeleteBusy=false;
   let photoZoomScale=1,photoZoomX=0,photoZoomY=0,photoPointers=new Map(),photoPinch=null,photoDrag=null,photoViewerSwipe=null,photoLastTap=null;
   const photoPageSize=60;
   const photoExtensions=new Set(['jpg','jpeg','png','webp','gif','heic','heif','avif','bmp','tif','tiff','apng','jfif']);
@@ -215,6 +215,24 @@
     try{const blob=await window.AgendaPhotoLibrary.getOriginal(row.id)||await window.AgendaPhotoLibrary.getThumbnail(row.id);if(!blob)throw new Error('No se encontró una imagen almacenada.');photoViewerUrl=URL.createObjectURL(blob);preview.src=photoViewerUrl;preview.alt=row.name;}catch(error){console.error('No se pudo abrir la imagen:',error);$('#mediaPreviewCaption').textContent=`${row.name} · No se pudo recuperar el archivo local`;}
   }
   function closePhotoViewer(){const viewer=$('#mediaViewer');if(viewer.classList.contains('hidden'))return;viewer.classList.add('hidden');const preview=$('#mediaPreview');preview.removeAttribute('src');resetPhotoZoom();if(photoViewerUrl)URL.revokeObjectURL(photoViewerUrl);photoViewerUrl='';window.scrollTo({top:photoViewerReturnScroll,behavior:'auto'});const localIndex=photoSelectedIndex-(photoPage-1)*photoPageSize;$('#mediaGrid [data-photo-index="'+localIndex+'"]')?.focus({preventScroll:true});}
+  function clearDeletePhotoPreview(){if(photoDeletePreviewUrl)URL.revokeObjectURL(photoDeletePreviewUrl);photoDeletePreviewUrl='';$('#deletePhotoThumbnail').removeAttribute('src');photoDeleteTargetId='';}
+  async function openDeletePhotoConfirmation(){
+    if(photoDeleteBusy||$('#mediaViewer').classList.contains('hidden'))return;const localIndex=photoSelectedIndex-(photoPage-1)*photoPageSize,row=libraryRows[localIndex];if(!row)return;
+    clearDeletePhotoPreview();photoDeleteTargetId=row.id;$('#deletePhotoName').textContent=row.name;$('#deletePhotoError').textContent='';$('#deletePhotoError').classList.add('hidden');$('#confirmDeletePhotoBtn').disabled=false;$('#cancelDeletePhoto').disabled=false;$('#closeDeletePhoto').disabled=false;
+    try{const thumbnail=await window.AgendaPhotoLibrary.getThumbnail(row.id);if(thumbnail){photoDeletePreviewUrl=URL.createObjectURL(thumbnail);$('#deletePhotoThumbnail').src=photoDeletePreviewUrl;}}catch(error){console.warn('No se pudo cargar la miniatura de confirmación:',error);}
+    $('#deletePhotoDialog').showModal();
+  }
+  function closeDeletePhotoConfirmation(){if(photoDeleteBusy)return;if($('#deletePhotoDialog').open)$('#deletePhotoDialog').close();clearDeletePhotoPreview();}
+  async function confirmDeletePhoto(){
+    const id=photoDeleteTargetId;if(!id||photoDeleteBusy)return;const row=libraryRows.find(photo=>photo.id===id);if(!row)return;
+    photoDeleteBusy=true;$('#confirmDeletePhotoBtn').disabled=true;$('#cancelDeletePhoto').disabled=true;$('#closeDeletePhoto').disabled=true;$('#deletePhotoError').textContent='';$('#deletePhotoError').classList.add('hidden');
+    try{
+      const deleted=await window.AgendaPhotoLibrary.deletePhoto(id);if(!deleted)throw new Error('La fotografía ya no está en la galería. No se eliminó ningún otro archivo.');
+      const returnScroll=photoViewerReturnScroll,lastOnPage=libraryRows.length===1,nextTotal=photoTotal-1,nextPage=lastOnPage&&photoPage>1?photoPage-1:photoPage;
+      $('#deletePhotoDialog').close();clearDeletePhotoPreview();closePhotoViewer();await loadPhotoPage(Math.min(nextPage,Math.max(1,Math.ceil(nextTotal/photoPageSize))));await updatePhotoStatus(`Fotografía «${row.name}» eliminada de la galería.`);window.scrollTo({top:returnScroll,behavior:'auto'});
+    }catch(error){const message=error?.message||'No se pudo eliminar la fotografía. El archivo local se conservó.';$('#deletePhotoError').textContent=message;$('#deletePhotoError').classList.remove('hidden');console.error('Error al eliminar fotografía:',error);}
+    finally{photoDeleteBusy=false;$('#confirmDeletePhotoBtn').disabled=false;$('#cancelDeletePhoto').disabled=false;$('#closeDeletePhoto').disabled=false;}
+  }
   function ensurePhotoGallery(){if(photoLibraryLoaded||photoGalleryPromise)return;photoGalleryPromise=loadPhotoPage(1).then(()=>resumePendingPhotos()).finally(()=>{photoGalleryPromise=null;});}
   function installationHelp(){const ua=navigator.userAgent,ios=/iPad|iPhone|iPod/.test(ua),android=/Android/i.test(ua);$('#installInstructions').textContent=ios?'En Safari, toca Compartir (el cuadro con la flecha hacia arriba), elige “Añadir a pantalla de inicio” y confirma con “Añadir”.':android?'En Chrome, abre el menú ⋮ y toca “Instalar aplicación” o “Añadir a pantalla principal”. Confirma para poner Agenda en el inicio.': 'Abre el menú de instalación de tu navegador (normalmente el icono junto a la barra de dirección o el menú) y selecciona “Instalar Agenda”.';if(!$('#installDialog').open)$('#installDialog').showModal();}
   function updateInstallButton(){const installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;$('#installBtnLabel').textContent=installed?'Instalada':'Instalar app';$('#installBtn').disabled=installed;}
@@ -239,6 +257,7 @@
   $('#mediaGrid').addEventListener('click',event=>{const button=event.target.closest('[data-photo-index]');if(button)openPhotoViewer(Number(button.dataset.photoIndex));});
   $('#mediaPagination').addEventListener('click',event=>{const button=event.target.closest('[data-page]');if(button&&!button.disabled)loadPhotoPage(Number(button.dataset.page));});
   $('#closeMediaViewer').onclick=closePhotoViewer;$('#mediaViewer').addEventListener('click',event=>{if(event.target===$('#mediaViewer'))closePhotoViewer();});
+  $('#deleteMediaPhoto').onclick=openDeletePhotoConfirmation;$('#confirmDeletePhotoBtn').onclick=confirmDeletePhoto;$('#cancelDeletePhoto').onclick=$('#closeDeletePhoto').onclick=closeDeletePhotoConfirmation;$('#deletePhotoDialog').addEventListener('cancel',event=>{if(photoDeleteBusy){event.preventDefault();return;}clearDeletePhotoPreview();});$('#deletePhotoDialog').addEventListener('close',()=>{if(!photoDeleteBusy)clearDeletePhotoPreview();});
   $('#mediaPrevious').onclick=()=>{if(photoSelectedIndex>0)showSelectedPhoto(photoSelectedIndex-1);};$('#mediaNext').onclick=()=>{if(photoSelectedIndex<photoTotal-1)showSelectedPhoto(photoSelectedIndex+1);};
   window.addEventListener('keydown',event=>{if($('#mediaViewer').classList.contains('hidden'))return;if(event.key==='Escape'){event.preventDefault();closePhotoViewer();}else if(event.key==='ArrowLeft'&&photoSelectedIndex>0){event.preventDefault();showSelectedPhoto(photoSelectedIndex-1);}else if(event.key==='ArrowRight'&&photoSelectedIndex<photoTotal-1){event.preventDefault();showSelectedPhoto(photoSelectedIndex+1);}});
   const photoViewerStage=$('#mediaViewerStage');

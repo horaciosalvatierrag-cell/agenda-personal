@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const DB_NAME = 'AgendaSelectedPhotoLibrary';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const PAGE_SIZE = 60;
   let dbPromise;
 
@@ -18,6 +18,7 @@
         if (!database.objectStoreNames.contains('originals')) database.createObjectStore('originals', { keyPath: 'id' });
         if (!database.objectStoreNames.contains('thumbnails')) database.createObjectStore('thumbnails', { keyPath: 'id' });
         if (!database.objectStoreNames.contains('pending')) database.createObjectStore('pending', { keyPath: 'id' });
+        if (!database.objectStoreNames.contains('tombstones')) database.createObjectStore('tombstones', { keyPath: 'id' });
       };
       request.onsuccess = () => {
         const database = request.result;
@@ -74,6 +75,35 @@
     return requestValue(database.transaction('photos', 'readonly').objectStore('photos').get(id));
   }
 
+  async function deletePhoto(id) {
+    if (typeof id !== 'string' || !id) throw new TypeError('Identificador de fotografía no válido.');
+    const database = await open();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction(['photos', 'originals', 'thumbnails', 'pending', 'tombstones'], 'readwrite');
+      const photos = transaction.objectStore('photos');
+      let deleted = false;
+      const request = photos.get(id);
+      request.onsuccess = () => {
+        if (!request.result) return;
+        deleted = true;
+        photos.delete(id);
+        transaction.objectStore('originals').delete(id);
+        transaction.objectStore('thumbnails').delete(id);
+        transaction.objectStore('pending').delete(id);
+        transaction.objectStore('tombstones').put({ id, deletedAt: Date.now() });
+      };
+      request.onerror = () => transaction.abort();
+      transaction.oncomplete = () => resolve(deleted);
+      transaction.onerror = () => reject(transaction.error || new Error('No se pudo eliminar la fotografía del almacenamiento local.'));
+      transaction.onabort = () => reject(transaction.error || new Error('No se pudo eliminar la fotografía del almacenamiento local.'));
+    });
+  }
+
+  async function getTombstones() {
+    const database = await open();
+    return requestValue(database.transaction('tombstones', 'readonly').objectStore('tombstones').getAll());
+  }
+
   async function getBlob(storeName, id) {
     const database = await open();
     const row = await requestValue(database.transaction(storeName, 'readonly').objectStore(storeName).get(id));
@@ -83,7 +113,7 @@
   async function stagePhoto(photo) {
     const database = await open();
     return new Promise((resolve, reject) => {
-      const transaction = database.transaction(['photos', 'originals', 'pending'], 'readwrite');
+      const transaction = database.transaction(['photos', 'originals', 'pending', 'tombstones'], 'readwrite');
       const photos = transaction.objectStore('photos'), pending = transaction.objectStore('pending');
       const check = photos.get(photo.id), queued = pending.get(photo.id);
       let duplicate = false, alreadyPending = false;
@@ -91,6 +121,7 @@
         if (check.result) duplicate = true;
       };
       queued.onsuccess = () => {
+        transaction.objectStore('tombstones').delete(photo.id);
         if (queued.result) { alreadyPending = true; return; }
         if (duplicate) return;
         transaction.objectStore('originals').put({ id: photo.id, blob: photo.original, mime: photo.mime, size: photo.size });
@@ -215,5 +246,5 @@
     return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
-  window.AgendaPhotoLibrary = { open, count, getPage, get, getOriginal: id => getBlob('originals', id), getThumbnail: id => getBlob('thumbnails', id), stagePhoto, getPending, getFirstPending, completePending, addPhoto, verify, diagnostics, requestPersistence, makeThumbnail, fingerprint, pageSize: PAGE_SIZE };
+  window.AgendaPhotoLibrary = { open, count, getPage, get, deletePhoto, getTombstones, getOriginal: id => getBlob('originals', id), getThumbnail: id => getBlob('thumbnails', id), stagePhoto, getPending, getFirstPending, completePending, addPhoto, verify, diagnostics, requestPersistence, makeThumbnail, fingerprint, pageSize: PAGE_SIZE };
 })();
