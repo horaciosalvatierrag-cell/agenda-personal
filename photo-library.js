@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const DB_NAME = 'AgendaSelectedPhotoLibrary';
-  const DB_VERSION = 3;
+  const DB_VERSION = 4;
   const PAGE_SIZE = 60;
   const PHOTO_EXTENSIONS = new Set(['jpg','jpeg','png','webp','gif','heic','heif','avif','bmp','tif','tiff','apng','jfif']);
   let dbPromise;
@@ -26,6 +26,7 @@
         }
         const photos = request.transaction.objectStore('photos');
         if (!photos.indexNames.contains('by-name')) photos.createIndex('by-name', 'searchName', { unique: false });
+        if (!photos.indexNames.contains('by-favorite-modified')) photos.createIndex('by-favorite-modified', ['favoriteSort', 'lastModified', 'id'], { unique: false });
         if (!database.objectStoreNames.contains('originals')) database.createObjectStore('originals', { keyPath: 'id' });
         if (!database.objectStoreNames.contains('thumbnails')) database.createObjectStore('thumbnails', { keyPath: 'id' });
         if (!database.objectStoreNames.contains('pending')) database.createObjectStore('pending', { keyPath: 'id' });
@@ -121,9 +122,9 @@
     return -1;
   }
 
-  async function searchPage(queryText, page = 1, pageSize = PAGE_SIZE, signal = null) {
+  async function searchPage(queryText, page = 1, pageSize = PAGE_SIZE, signal = null, favoritesOnly = false) {
     const query = normalizeQuery(queryText);
-    if (!query) return getPage(page, pageSize);
+    if (!query) return getPage(page, pageSize, favoritesOnly);
     if (signal?.aborted) throw new DOMException('Búsqueda cancelada.', 'AbortError');
     const database = await open();
     if (signal?.aborted) throw new DOMException('Búsqueda cancelada.', 'AbortError');
@@ -153,7 +154,7 @@
             return resolve({ rows: matches.slice((safePage - 1) * pageSize, safePage * pageSize).map(item => ({ ...item.row, matchLevel: levels[item.rank] })), total, page: safePage, pageCount });
           }
           const row = cursor.value, name = row.searchName || normalizePhotoName(row.name), rank = photoMatchRank(name, query, queryWords);
-          if (rank >= 0) matches.push({ row, rank });
+          if (rank >= 0 && (!favoritesOnly || row.favorite === true)) matches.push({ row, rank });
           cursor.continue();
         };
         cursorRequest.onerror = () => { if (!cancelled) reject(cursorRequest.error || new Error('No se pudo recorrer el índice de nombres.')); };
@@ -174,29 +175,27 @@
     return requestValue(database.transaction('photos', 'readonly').objectStore('photos').count());
   }
 
-  async function getPage(page = 1, pageSize = PAGE_SIZE) {
+  async function getPage(page = 1, pageSize = PAGE_SIZE, favoritesOnly = false) {
     const database = await open();
-    const total = await requestValue(database.transaction('photos', 'readonly').objectStore('photos').count());
-    const pageCount = Math.ceil(total / pageSize);
-    const safePage = Math.min(Math.max(1, Number(page) || 1), Math.max(1, pageCount));
-    const rows = [];
     const transaction = database.transaction('photos', 'readonly');
-    const index = transaction.objectStore('photos').index('by-modified');
+    const store = transaction.objectStore('photos');
+    const favoriteRange = IDBKeyRange.bound([1, 0, ''], [1, Number.MAX_SAFE_INTEGER, '\uffff']);
     return new Promise((resolve, reject) => {
-      const request = index.openCursor(null, 'prev');
-      let skipped = 0;
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (!cursor || rows.length >= pageSize) return resolve({ rows, total, page: safePage, pageCount });
-        if (skipped < (safePage - 1) * pageSize) {
-          skipped++;
-          cursor.continue();
-          return;
-        }
-        rows.push(cursor.value);
-        cursor.continue();
+      const countRequest = favoritesOnly ? store.index('by-favorite-modified').count(favoriteRange) : store.count();
+      countRequest.onsuccess = () => {
+        const total = countRequest.result, pageCount = Math.ceil(total / pageSize);
+        const safePage = Math.min(Math.max(1, Number(page) || 1), Math.max(1, pageCount)), rows = [], index = store.index(favoritesOnly ? 'by-favorite-modified' : 'by-modified');
+        const request = index.openCursor(favoritesOnly ? favoriteRange : null, 'prev');
+        let skipped = 0;
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor || rows.length >= pageSize) return resolve({ rows, total, page: safePage, pageCount });
+          if (skipped < (safePage - 1) * pageSize) { skipped++; cursor.continue(); return; }
+          rows.push(cursor.value); cursor.continue();
+        };
+        request.onerror = () => reject(request.error);
       };
-      request.onerror = () => reject(request.error);
+      countRequest.onerror = () => reject(countRequest.error);
       transaction.onerror = () => reject(transaction.error);
     });
   }
@@ -204,6 +203,31 @@
   async function get(id) {
     const database = await open();
     return requestValue(database.transaction('photos', 'readonly').objectStore('photos').get(id));
+  }
+
+  async function setFavorite(id, favorite) {
+    if (typeof id !== 'string' || !id) throw new TypeError('Identificador de fotografía no válido.');
+    const database = await open();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction('photos', 'readwrite');
+      const store = transaction.objectStore('photos');
+      let updated = null;
+      const request = store.get(id);
+      request.onsuccess = () => {
+        if (!request.result) return;
+        updated = { ...request.result, favorite: favorite === true, favoriteSort: favorite === true ? 1 : 0 };
+        store.put(updated);
+      };
+      request.onerror = () => transaction.abort();
+      transaction.oncomplete = () => resolve(updated);
+      transaction.onerror = () => reject(transaction.error || new Error('No se pudo guardar el favorito.'));
+      transaction.onabort = () => reject(transaction.error || new Error('No se pudo guardar el favorito.'));
+    });
+  }
+
+  async function countFavorites() {
+    const database = await open();
+    return requestValue(database.transaction('photos', 'readonly').objectStore('photos').index('by-favorite-modified').count(IDBKeyRange.bound([1, 0, ''], [1, Number.MAX_SAFE_INTEGER, '\uffff'])));
   }
 
   async function deletePhoto(id) {
@@ -378,5 +402,5 @@
     return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
-  window.AgendaPhotoLibrary = { open, count, getPage, searchPage, get, deletePhoto, getTombstones, getOriginal: id => getBlob('originals', id), getThumbnail: id => getBlob('thumbnails', id), stagePhoto, getPending, getFirstPending, completePending, addPhoto, verify, diagnostics, requestPersistence, makeThumbnail, fingerprint, pageSize: PAGE_SIZE };
+  window.AgendaPhotoLibrary = { open, count, countFavorites, getPage, searchPage, get, setFavorite, deletePhoto, getTombstones, getOriginal: id => getBlob('originals', id), getThumbnail: id => getBlob('thumbnails', id), stagePhoto, getPending, getFirstPending, completePending, addPhoto, verify, diagnostics, requestPersistence, makeThumbnail, fingerprint, pageSize: PAGE_SIZE };
 })();
