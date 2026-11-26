@@ -130,6 +130,9 @@ button { color: inherit; }
 .install-btn:hover { border-color: #78b7e5; background: #e4f3fd; }
 .install-btn span:first-child { font-size: 15px; }
 .install-btn:disabled { cursor: default; opacity: .7; }
+.game-btn { display: inline-flex; min-height: 36px; align-items: center; gap: 7px; padding: 0 10px; border: 1px solid #b9d9f1; border-radius: 7px; color: #005a9e; background: #f2f9fe; font-size: 10px; font-weight: 700; cursor: pointer; }
+.game-btn:hover { border-color: #78b7e5; background: #e4f3fd; }
+.game-btn span:first-child { font-size: 15px; }
 .icon-btn, .avatar, .arrow, .close-btn { display: grid; place-items: center; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
 .icon-btn { position: relative; width: 39px; height: 39px; border-radius: 50%; color: #43525e; font-size: 18px; transition: background .15s, border-color .15s; }
 .icon-btn:hover, .arrow:hover { border-color: #b9d9f1; background: #f5faff; }
@@ -440,5 +443,7 @@ label input:focus, label select:focus, label textarea:focus { border-color: var(
   .top-actions { gap: 5px; }
   .install-btn { width: 33px; justify-content: center; padding: 0; }
   .install-btn span:last-child { display: none; }
+  .game-btn { width: 33px; justify-content: center; padding: 0; }
+  .game-btn span:last-child { display: none; }
 }
 .auth-card{margin-top:20px;padding-top:15px;border-top:1px solid var(--line,#e5e7eb);display:grid;gap:8px}.auth-card>strong{font-size:.84rem}.auth-card p{margin:0;font-size:.78rem;line-height:1.45;color:var(--muted,#667085);overflow-wrap:anywhere}.auth-btn{border:1px solid var(--line,#d9e1ea);border-radius:9px;background:#fff;color:var(--ink,#182230);font:inherit;font-size:.78rem;font-weight:600;padding:8px 10px;cursor:pointer;text-align:left}.auth-btn:hover{border-color:#0078d4;color:#0067b8}.auth-btn:disabled{opacity:.55;cursor:wait}.auth-link{justify-self:start;border:0;background:none;padding:3px 0;color:var(--muted,#667085);font:inherit;font-size:.75rem;text-decoration:underline;cursor:pointer}@media(max-width:720px){.auth-card{margin-top:12px;padding-top:12px}}
