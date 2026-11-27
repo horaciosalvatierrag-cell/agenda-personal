@@ -1,6 +1,8 @@
 .backup-panel{max-width:860px;margin:0 auto;padding:clamp(20px,4vw,34px)}
 .backup-panel h2{margin:8px 0 10px;font-size:clamp(1.35rem,3vw,1.8rem)}
 .backup-panel>p{max-width:680px;color:var(--muted,#667085);line-height:1.6}
+.backup-capacity{margin:16px 0;padding:12px 14px;border:1px solid var(--line,#d9e1ea);border-radius:10px;background:var(--soft,#f2f7fb);color:var(--muted,#667085);font-size:.88rem;line-height:1.55;overflow-wrap:anywhere}
+html[data-theme="dark"] .backup-capacity{background:#242d37;color:#c5cfda}
 .backup-password-label{display:grid;gap:8px;max-width:520px;margin:22px 0 16px;font-weight:600}
 .backup-password-label input{width:100%;border:1px solid var(--line,#d9e1ea);border-radius:10px;background:var(--surface,#fff);color:var(--ink,#182230);font:inherit;padding:12px 14px}
 .backup-actions{display:flex;flex-wrap:wrap;gap:10px}

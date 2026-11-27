@@ -5,7 +5,6 @@
   const VERSION = 1;
   const ITERATIONS = 310000;
   const CHUNK_SIZE = 1024 * 1024;
-  const MAX_RESTORE_SIZE = 512 * 1024 * 1024;
   const $ = selector => document.querySelector(selector);
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
@@ -19,6 +18,33 @@
   function showError(message) {
     status.textContent = message;
     status.classList.add('error');
+  }
+  const formatBytes = bytes => {
+    if (!Number.isFinite(bytes) || bytes < 0) return 'no disponible';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB']; let size = bytes, unit = 0;
+    while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit++; }
+    return `${size.toLocaleString(undefined, { maximumFractionDigits: 1 })} ${units[unit]}`;
+  };
+  async function storageDiagnostics(requestPersistence = false) {
+    const storage = navigator.storage;
+    let persisted = null, estimate = null;
+    try { if (requestPersistence && storage?.persist) persisted = await storage.persist(); else if (storage?.persisted) persisted = await storage.persisted(); } catch {}
+    try { estimate = await storage?.estimate?.(); } catch {}
+    const available = estimate?.quota != null && estimate?.usage != null ? Math.max(0, estimate.quota - estimate.usage) : null;
+    const memory = Number(navigator.deviceMemory) || 0;
+    const heapLimit = Number(performance?.memory?.jsHeapSizeLimit) || 0;
+    const ram = memory ? memory * 1024 ** 3 : 0;
+    const budgets = [ram ? ram * .35 : 0, heapLimit ? heapLimit * .65 : 0].filter(value => value > 0);
+    const workBudget = budgets.length ? Math.min(...budgets) : 0;
+    const parts = [];
+    if (estimate?.quota != null) parts.push(`Cuota del navegador: ${formatBytes(estimate.usage || 0)} usados de ${formatBytes(estimate.quota)}; ${formatBytes(available)} disponibles`);
+    else parts.push('El navegador no informa una cuota local estimada');
+    parts.push(persisted === true ? 'persistencia concedida' : persisted === false ? 'persistencia no garantizada' : 'persistencia no informada');
+    if (memory) parts.push(`RAM aproximada del dispositivo: ${memory} GB`);
+    if (workBudget) parts.push(`presupuesto de trabajo estimado: ${formatBytes(workBudget)}`);
+    parts.push('La cuota local no representa el espacio libre del destino de descarga.');
+    $('#backupCapacity').textContent = parts.join(' · ');
+    return { availableStorage: available, quota: estimate?.quota ?? null, usage: estimate?.usage ?? null, memoryGiB: memory, workBudget };
   }
   function showProgress(message, value = 0, total = 1) {
     status.textContent = message;
@@ -210,13 +236,12 @@
   }
 
   async function checkRestoreSpace(data, mode) {
-    if (!navigator.storage?.estimate) return;
-    const estimate = await navigator.storage.estimate().catch(() => null);
-    if (!estimate?.quota || !Number.isFinite(estimate.usage)) return;
+    const estimate = await storageDiagnostics(false);
     const incomingBytes = (data.sqlite?.byteLength || 0)
       + (data.contacts?.files || []).reduce((sum, item) => sum + (item.blob?.size || 0), 0)
       + ['originals', 'thumbnails', 'pending'].reduce((sum, name) => sum + (data.photos?.[name] || []).reduce((part, row) => part + (row.blob?.size || 0), 0), 0);
-    const available = Math.max(0, estimate.quota - estimate.usage);
+    const available = estimate.availableStorage;
+    if (available == null) return;
     if (incomingBytes > available) {
       const action = mode === 'merge' ? 'incorporar' : 'restaurar de forma segura';
       throw new Error(`El navegador estima ${(incomingBytes / 1024 / 1024).toFixed(0)} MB de archivos para ${action}, pero solo informa ${(available / 1024 / 1024).toFixed(0)} MB disponibles. Libera espacio o usa otro dispositivo. Los datos actuales no se modificaron.`);
@@ -314,15 +339,11 @@
       const data = await collectLocalData(), pkg = makePackage(data);
       validatePackageData(data, pkg.manifest);
       const estimatedBytes = pkg.files.reduce((sum, item) => sum + (item.value.size ?? item.value.byteLength), 0);
-      if (estimatedBytes > MAX_RESTORE_SIZE * 0.8) throw new Error('El paquete completo excede el tamaño que Agenda puede verificar y restaurar de forma segura en Chrome. Los datos locales no se modificaron.');
-      if (!writable && estimatedBytes > 512 * 1024 * 1024) throw new Error('Este navegador no ofrece guardado por flujo y el respaldo supera 512 MB. Usa Chrome de escritorio con guardado local o divide la biblioteca antes.');
-      if (!writable && navigator.deviceMemory && navigator.deviceMemory <= 4 && estimatedBytes > 256 * 1024 * 1024) throw new Error('La memoria disponible del teléfono es limitada para este respaldo. Usa Chrome de escritorio para guardar el ZIP por flujo.');
+      const resourceInfo = await storageDiagnostics(true);
+      if (!writable && resourceInfo.workBudget && estimatedBytes * 2.5 > resourceInfo.workBudget) throw new Error(`El respaldo requiere aproximadamente ${formatBytes(estimatedBytes * 2.5)} de memoria de trabajo y el presupuesto estimado del dispositivo es ${formatBytes(resourceInfo.workBudget)}. Usa un navegador con guardado por flujo o un equipo con más memoria.`);
+      if (estimatedBytes >= 0xffffffff * .9) throw new Error('El ZIP clásico no admite un archivo de este tamaño. No se generó un archivo posiblemente dañado; este navegador aún no ofrece volúmenes ZIP64.');
       showProgress('Cifrando y creando el archivo ZIP…', 0, estimatedBytes || 1);
       const output = await buildZip(pkg, password, (done, total) => showProgress(`Creando respaldo: ${Math.round(done / 1024 / 1024)} MB procesados`, done, total), writable);
-      if (output.blob && navigator.storage?.estimate) {
-        const estimate = await navigator.storage.estimate();
-        if (output.blob.size > (estimate.quota - estimate.usage) * 0.8) throw new Error('El espacio local parece insuficiente. Los datos de Agenda no se modificaron.');
-      }
       if (output.blob) download(output.blob, `agenda-respaldo-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`);
       const counts = data.counts;
       summary.textContent = `Respaldo cifrado ${writable ? 'guardado' : 'descargado'} · ${counts.activities} actividades · ${counts.diaryNotes} días de diario · ${data.finance.length} movimientos financieros · ${data.contacts.contacts.length} contactos · ${pkg.manifest.sections.photos} fotos · ${pkg.manifest.sections.originals} originales · ${pkg.manifest.sections.thumbnails} miniaturas · ${(output.size / 1024 / 1024).toFixed(1)} MB`;
@@ -359,10 +380,9 @@
   }
 
   async function decodeArchive(file, password) {
-    if (file.size > MAX_RESTORE_SIZE) throw new Error('Este navegador no puede procesar respaldos mayores a 512 MB de forma segura. No se modificaron datos.');
-    const memoryGiB = Number(navigator.deviceMemory) || 0;
-    const safeSize = memoryGiB && memoryGiB <= 4 ? 128 * 1024 * 1024 : memoryGiB && memoryGiB <= 8 ? 256 * 1024 * 1024 : 512 * 1024 * 1024;
-    if (file.size > safeSize) throw new Error(`Para proteger el navegador${memoryGiB ? ` (memoria estimada: ${memoryGiB} GB)` : ''}, esta sesión limita la restauración a ${(safeSize / 1024 / 1024).toFixed(0)} MB. Usa Chrome de escritorio o divide la biblioteca en varios respaldos.`);
+    const resourceInfo = await storageDiagnostics(false);
+    const estimatedWorkingSet = file.size * 4;
+    if (resourceInfo.workBudget && estimatedWorkingSet > resourceInfo.workBudget) throw new Error(`La lectura estimada necesita ${formatBytes(estimatedWorkingSet)} de memoria temporal; el presupuesto calculado con los recursos reportados es ${formatBytes(resourceInfo.workBudget)}. Libera memoria o usa un equipo con más RAM. No se modificaron datos.`);
     const bytes = new Uint8Array(await file.arrayBuffer());
     validateZip(bytes);
     const archive = fflate.unzipSync(bytes);
@@ -538,7 +558,8 @@
       safetyWritable = await savePicker();
       if (safetyWritable === false) { rollback = null; return finish('Restauración cancelada.'); }
       const estimatedSafety = safety.files.reduce((sum, item) => sum + (item.value.size ?? item.value.byteLength), 0);
-      if (!safetyWritable && estimatedSafety > 512 * 1024 * 1024) throw new Error('No hay guardado por flujo y la copia actual supera 512 MB. No se inició la restauración.');
+      const safetyResources = await storageDiagnostics(false);
+      if (!safetyWritable && safetyResources.workBudget && estimatedSafety * 2.5 > safetyResources.workBudget) throw new Error('El navegador no ofrece guardado por flujo y la copia de seguridad previa excede el presupuesto de memoria estimado. No se inició la restauración.');
       const safetyOutput = await buildZip(safety, $('#backupPassword').value, () => {}, safetyWritable);
       if (safetyOutput.blob) download(safetyOutput.blob, `agenda-antes-de-restaurar-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`);
       if (mode === 'replace' && !confirm('Se solicitó la descarga de seguridad. ¿Confirmas que deseas reemplazar los datos actuales con el respaldo seleccionado?')) return;
@@ -575,6 +596,7 @@
       restoreMode.classList.add('hidden'); $('#restoreFullBackup').dataset.ready = ''; $('#restoreFullBackup').textContent = 'Restaurar respaldo'; summary.classList.add('hidden'); pendingRestore = null;
     }));
     $('#footerBackupLink').onclick = () => { document.querySelector('[data-view="settings"]')?.click(); };
+    storageDiagnostics(false).catch(() => {});
   }
   init();
 })();

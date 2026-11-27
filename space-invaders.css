@@ -1,0 +1,16 @@
+.game-menu-wrap{position:relative}
+.game-menu{position:absolute;z-index:60;right:0;top:calc(100% + 9px);display:grid;min-width:190px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--paper);box-shadow:0 12px 32px #10243a2a}
+.game-menu button{min-height:42px;padding:9px 12px;border:0;border-radius:8px;color:var(--ink);background:transparent;text-align:left;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.game-menu button:hover,.game-menu button:focus-visible{background:var(--blue-soft);color:var(--blue-dark)}
+.invaders-view{padding:18px}
+.invaders-layout{display:grid;justify-items:center;gap:10px;max-width:960px;margin:0 auto}
+.invaders-canvas{display:block;width:min(100%,900px);height:auto;aspect-ratio:3/2;border:1px solid #31415e;border-radius:12px;background:#081229;touch-action:none}
+.invaders-hud{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;width:100%;color:var(--muted);font-size:11px;font-weight:750;letter-spacing:.08em}
+.invaders-hud span{display:flex;gap:8px;padding:8px 13px;border:1px solid var(--line);border-radius:9px;background:var(--paper)}
+.invaders-hud b{color:var(--blue-dark);font-variant-numeric:tabular-nums}
+.invaders-actions{display:grid;grid-template-columns:repeat(3,minmax(100px,150px));gap:8px}
+.invaders-actions button{min-height:42px}
+.invaders-touch-controls{display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;width:min(100%,520px);touch-action:none}
+.invaders-touch-controls button{min-height:48px;padding:6px;border:1px solid var(--line);border-radius:9px;color:var(--blue-dark);background:var(--paper);font:inherit;font-size:11px;font-weight:800;touch-action:none;user-select:none}
+.invaders-touch-controls button:active{background:var(--blue-soft);border-color:var(--blue)}
+@media(max-width:640px){.invaders-view{padding:12px 8px 20px}.invaders-touch-controls{display:grid}.invaders-actions{grid-template-columns:repeat(3,minmax(0,1fr));width:100%}}
