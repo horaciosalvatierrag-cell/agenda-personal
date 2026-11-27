@@ -97,6 +97,12 @@ El respaldo no usa servicios externos ni sincroniza dispositivos. La interfaz mu
 
 El ZIP actual usa ZIP clásico mediante fflate, no ZIP64. ZIP clásico tiene límites estructurales cercanos a 4 GB y el formato todavía no genera ni restaura volúmenes numerados; AGENDA detiene una creación que excedería ese límite para no entregar un archivo dañado. El lector todavía procesa el ZIP completo en memoria. Las pruebas de esta entrega no certifican bibliotecas de 100,000 fotografías ni archivos multigigabyte. Para colecciones mayores que estos límites se necesita una implementación ZIP64 o por volúmenes antes de que puedan respaldarse y restaurarse con seguridad.
 
+### Recordatorios de pago
+
+En **Finanzas → Recordatorios de pago** se pueden registrar vencimientos únicos o recurrentes, configurar avisos a 7, 3 y 1 día antes, el día del vencimiento, y avisos diarios mientras sigan vencidos. Los registros y el historial quedan en el IndexedDB financiero local; están incluidos en el respaldo completo y en el respaldo JSON de Finanzas. Al marcar un pago, se guarda fecha, importe y observaciones; las recurrencias avanzan la próxima fecha sin alterar el historial anterior.
+
+Para recibir notificaciones del sistema, activa el permiso desde esa sección. AGENDA revisa vencimientos al abrirse, volver a estar visible y cada minuto mientras está activa. No puede programar avisos cuando el navegador o la PWA estén cerrados o suspendidos; los pagos continúan disponibles localmente para consultarlos al regresar.
+
 ### Juegos locales
 
 El botón **JUEGO** ofrece **TETRIS** y **SPACE INVADERS**. Space Invaders se dibuja en Canvas y usa código local; sus controles de teclado y táctiles funcionan sin cuenta, publicidad ni peticiones de red. El Service Worker incluye sus archivos para abrirlo sin conexión después de que la nueva versión de Agenda se haya instalado y almacenado en caché.

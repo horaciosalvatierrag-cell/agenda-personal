@@ -1,4 +1,4 @@
-const CACHE='agenda-personal-v43';
+const CACHE='agenda-personal-v44';
 const ASSETS=['./','./index.html','./styles.css','./finance.css','./vault.css','./contacts.css','./tetris.css','./space-invaders.css','./backup.css','./i18n.js','./photo-library.js','./app.js','./tetris.js','./space-invaders.js','./finance.js','./vault.js','./contacts.js','./backup.js','./auth.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-512-maskable.png','./apple-touch-icon.png','./vendor/sql-wasm.js','./vendor/sql-wasm.wasm','./vendor/fflate.js'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
