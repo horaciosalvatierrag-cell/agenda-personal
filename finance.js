@@ -80,6 +80,6 @@
   async function init(){try{db=await openDb();records=await readAll();render();}catch(e){console.error(e);root.innerHTML='<article class="panel finance-block">No se pudo abrir el almacenamiento financiero local. La información de AGENDA permanece intacta.</article>';}}
   function localizeDates(){root.querySelectorAll('[data-locale-date]').forEach(node=>{node.textContent=dateText(node.dataset.localeDate);});}
   window.addEventListener('agenda-language-changed',localizeDates);
-  window.AgendaFinance={render,localizeDates};
+  window.AgendaFinance={render,localizeDates,backupExport:async()=>{await init();return structuredClone(records);},backupRestore:async(incoming,mode)=>{if(!Array.isArray(incoming)||incoming.some(row=>!row||typeof row.id!=='string'||!['transaction','debt','debtPayment','goal','savingsMove','budget'].includes(row.type)))throw new Error('Los registros financieros del respaldo no son válidos.');await init();const next=mode==='replace'?incoming:records.concat(incoming.filter(row=>!records.some(old=>old.id===row.id)));await commit(next);records=next;notice='Respaldo financiero restaurado.';render();return {count:next.length};}};
   init();
 })();
